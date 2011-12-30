@@ -1,0 +1,71 @@
+jacks - Jackson module for Scala
+
+  Jacks provides a Jackson Module for reading and writing common Scala data
+  types, including mutable & immutable collections, Option, Tuple, Symbol,
+  and case classes.
+
+  This version of jacks has been tested against Scala 2.9.1 and Jackson 1.9.3
+
+  Join the lambdaWorks-OSS Google Group to discuss this project:
+
+    http://groups.google.com/group/lambdaworks-oss
+    lambdaworks-oss@googlegroups.com
+
+Basic Usage
+
+  The JacksMapper companion object provides a preconfigured ObjectMapper
+  and a number of read/write methods:
+
+  JacksMapper.writeValueAsString(List(1, 2, 3)) == "[1,2,3]"
+
+  JacksMapper.readValue[List[Int]]("[1, 2, 3]") == List(1, 2, 3)
+
+  The preconfigured ObjectMapper is available via JacksMapper.mapper
+  and a new ScalaModule may be added to any existing ObjectMapper.
+
+Erasure & Manifests
+
+  Reading parameterized types requires a Jackson JavaType which can be
+  derived from a Scala Manifest. The readValue methods of JacksMapper take
+  an implicit Manifest and look up the appropriate JavaType.
+
+  JacksMapper.resolve(manifest) will also return the correct JavaType
+  given a Manifest.
+
+Serialization Details
+
+  Maps are serialized as JSON objects, Seqs and Sets are serialized as
+  JSON arrays. Tuples are also serialized as JSON arrays.
+
+  None is serialized as null, Some(v) is serialized as v.
+
+  Symbols are serialized as strings.
+
+  Case classes are serialized as JSON objects.
+
+Collections
+
+  Jacks supports bidirectional mapping of nearly all Scala mutable and
+  immutable collections. Custom collections types are also supported as
+  long as they implement a supported interface and provide the
+  appropriate companion object.
+
+Case Classes
+
+  Jacks supports bidirectional mapping of case classes as JSON objects,
+  with a few restrictions: a ScalaSig is required, only fields declared
+  in the primary constructor are included, and inherited members are
+  ignored.
+
+  The Scala compiler only generates ScalaSig annotations for top-level
+  classes, so nested case classes aren't supported.
+
+Maven Artifacts
+
+  Releases of jacks are available in the maven central repository:
+
+  <dependency>
+    <groupId>com.lambdaworks</groupId>
+    <artifactId>jacks</artifactId>
+    <version>1.9.0</version>
+  </dependency>
