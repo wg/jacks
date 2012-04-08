@@ -2,8 +2,8 @@
 
 package com.lambdaworks.jacks
 
-import org.codehaus.jackson.`type`.JavaType
-import org.codehaus.jackson.map.ObjectMapper
+import com.fasterxml.jackson.databind.JavaType
+import com.fasterxml.jackson.databind.ObjectMapper
 
 import scala.collection.JavaConversions.JConcurrentMapWrapper
 

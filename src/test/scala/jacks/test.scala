@@ -80,9 +80,9 @@ class CaseClassSuite extends JacksTestSuite {
     read[Aliased](json) should equal (Aliased(set = Set(17, 23)))
   }
 
-  test("missing property without default") {
-    val json = """{"int": 1}"""
-    read[NoDefault](json) should equal (NoDefault(1, null))
+  test("property without default is null") {
+    read[NoDefault]("""{"int": 1}""").string should equal (null)
+    rw(NoDefault(1, null)) should equal (NoDefault(1, null))
   }
 }
 

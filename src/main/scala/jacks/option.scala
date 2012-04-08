@@ -2,17 +2,16 @@
 
 package com.lambdaworks.jacks
 
-import org.codehaus.jackson._
-import org.codehaus.jackson.map._
-import org.codehaus.jackson.map.ser.std.SerializerBase
-import org.codehaus.jackson.`type`.JavaType
+import com.fasterxml.jackson.core._
+import com.fasterxml.jackson.databind._
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
-class OptionSerializer(t: JavaType, bp: BeanProperty) extends SerializerBase[Option[_]](t) {
+class OptionSerializer(t: JavaType) extends StdSerializer[Option[_]](t) {
   override def serialize(value: Option[_], g: JsonGenerator, p: SerializerProvider) {
     value match {
       case Some(v) =>
         val a = v.asInstanceOf[AnyRef]
-        val s = p.findValueSerializer(a.getClass, bp)
+        val s = p.findValueSerializer(a.getClass, null)
         s.serialize(a, g, p)
       case None =>
         p.defaultSerializeNull(g)
@@ -20,8 +19,9 @@ class OptionSerializer(t: JavaType, bp: BeanProperty) extends SerializerBase[Opt
   }
 }
 
-class OptionDeserializer(d: JsonDeserializer[_]) extends JsonDeserializer[Option[_]] {
+class OptionDeserializer(t: JavaType) extends JsonDeserializer[Option[_]] {
   override def deserialize(p: JsonParser, ctx: DeserializationContext): Option[_] = {
+    val d = ctx.findContextualValueDeserializer(t, null)
     Some(d.deserialize(p, ctx))
   }
 

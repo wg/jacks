@@ -2,15 +2,14 @@
 
 package com.lambdaworks.jacks
 
-import org.codehaus.jackson._
-import org.codehaus.jackson.JsonToken._
-import org.codehaus.jackson.map._
-import org.codehaus.jackson.map.ser.std.SerializerBase
-import org.codehaus.jackson.`type`.JavaType
+import com.fasterxml.jackson.core._
+import com.fasterxml.jackson.core.JsonToken._
+import com.fasterxml.jackson.databind._
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
 import java.lang.reflect.Constructor
 
-class TupleSerializer(t: JavaType, bp: BeanProperty) extends SerializerBase[Product](t) {
+class TupleSerializer(t: JavaType) extends StdSerializer[Product](t) {
   override def serialize(value: Product, g: JsonGenerator, p: SerializerProvider) {
     var s: JsonSerializer[AnyRef] = null
     var c: Class[_] = null
@@ -22,7 +21,7 @@ class TupleSerializer(t: JavaType, bp: BeanProperty) extends SerializerBase[Prod
       if (a ne null) {
         if (a.getClass ne c) {
           c = a.getClass
-          s = p.findValueSerializer(c, bp)
+          s = p.findValueSerializer(c, null)
         }
         s.serialize(a, g, p)
       } else {
@@ -34,17 +33,18 @@ class TupleSerializer(t: JavaType, bp: BeanProperty) extends SerializerBase[Prod
   }
 }
 
-class TupleDeserializer(t: JavaType, ds: Array[JsonDeserializer[AnyRef]]) extends JsonDeserializer[Product] {
+class TupleDeserializer(t: JavaType) extends JsonDeserializer[Product] {
   val constructor = findConstructor
 
   override def deserialize(p: JsonParser, ctx: DeserializationContext): Product = {
     val values = new Array[AnyRef](t.containedTypeCount)
 
     for (i <- 0 until values.length) {
+      val d = ctx.findContextualValueDeserializer(t.containedType(i), null)
       p.nextToken
       values(i) = p.getCurrentToken match {
-        case VALUE_NULL => ds(i).getNullValue
-        case _          => ds(i).deserialize(p, ctx)
+        case VALUE_NULL => d.getNullValue
+        case _          => d.deserialize(p, ctx)
       }
     }
     p.nextToken

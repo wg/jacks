@@ -23,7 +23,7 @@ object ImmutableCollectionSpec extends ScalaModuleSpec("") {
 
   // Set
   property("Set[Boolean]")  = forAll { (s: Set[Boolean])  => s == rw(s) }
-  //property("BitSet")        = forAll { (s: BitSet)        => s == rw(s) }
+  property("BitSet")        = forAll { (s: BitSet)        => s == rw(s) }
   property("HashSet[Byte]") = forAll { (s: HashSet[Byte]) => s == rw(s) }
   property("ListSet[Char]") = forAll { (s: ListSet[Char]) => s == rw(s) }
 
@@ -56,7 +56,7 @@ object MutableCollectionSpec extends ScalaModuleSpec("") {
 
   // Set
   property("Set[Boolean]")        = forAll { (s: Set[Boolean])        => s == rw(s) }
-  // property("BitSet")              = forAll { (s: BitSet)              => s == rw(s) }
+  property("BitSet")              = forAll { (s: BitSet)              => s == rw(s) }
   property("HashSet[Byte]")       = forAll { (s: HashSet[Byte])       => s == rw(s) }
   property("LinkedHashSet[Char]") = forAll { (s: LinkedHashSet[Char]) => s == rw(s) }
 
@@ -210,7 +210,7 @@ case class CaseClass(
   list:    List[Char]
 )
 
-class ScalaModuleSpec(name: String) extends Properties(name) {
+abstract class ScalaModuleSpec(name: String) extends Properties(name) {
   import JacksMapper._
 
   def rw[T](v: T)(implicit m: Manifest[T]): T = {
@@ -261,7 +261,7 @@ trait ArbitraryCollections {
   import scala.collection.{GenMap, GenMapLike}
 
   def positiveIntStream: Arbitrary[Stream[Int]] = Arbitrary {
-    Gen.containerOf[Stream, Int](Gen.chooseNum(0, Int.MaxValue))
+    Gen.containerOf[Stream, Int](Gen.chooseNum(0, Short.MaxValue))
   }
 
   def arbitrarySeq[T: Arbitrary, C[T] <: Traversable[T]](c: GenericCompanion[C]): Arbitrary[C[T]] =

@@ -2,12 +2,11 @@
 
 package com.lambdaworks.jacks
 
-import org.codehaus.jackson._
-import org.codehaus.jackson.map._
-import org.codehaus.jackson.map.ser.std.SerializerBase
-import org.codehaus.jackson.`type`.JavaType
+import com.fasterxml.jackson.core._
+import com.fasterxml.jackson.databind._
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
-class SymbolSerializer(t: JavaType, bp: BeanProperty) extends SerializerBase[Symbol](t) {
+class SymbolSerializer(t: JavaType) extends StdSerializer[Symbol](t) {
   override def serialize(value: Symbol, g: JsonGenerator, p: SerializerProvider) {
     g.writeString(value.name)
   }

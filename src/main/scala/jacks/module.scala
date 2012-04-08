@@ -6,17 +6,18 @@ import scala.collection._
 import scala.collection.generic._
 import scala.collection.mutable.PriorityQueue
 
-import org.codehaus.jackson._
-import org.codehaus.jackson.map._
-import org.codehaus.jackson.map.`type`._
-import org.codehaus.jackson.`type`.JavaType
+import com.fasterxml.jackson.core._
+import com.fasterxml.jackson.databind._
+import com.fasterxml.jackson.databind.deser._
+import com.fasterxml.jackson.databind.ser._
+import com.fasterxml.jackson.databind.`type`._
 
 import java.lang.reflect.Method
 
 import tools.scalap.scalax.rules.scalasig.ScalaSig
 
 class ScalaModule extends Module {
-  def version       = new Version(1, 9, 0, null)
+  def version       = new Version(2, 0, 0, null, "com.lambdaworks", "jacks")
   def getModuleName = "ScalaModule"
 
   def setupModule(ctx: Module.SetupContext) {
@@ -26,60 +27,48 @@ class ScalaModule extends Module {
 }
 
 class ScalaDeserializers extends Deserializers.Base {
-  override def findBeanDeserializer(t: JavaType, cfg: DeserializationConfig, p: DeserializerProvider, bd: BeanDescription, bp: BeanProperty): JsonDeserializer[_] = {
+  override def findBeanDeserializer(t: JavaType, cfg: DeserializationConfig, bd: BeanDescription): JsonDeserializer[_] = {
     val cls = t.getRawClass
 
     if (classOf[GenTraversable[_]].isAssignableFrom(cls)) {
-      if (classOf[Seq[_]].isAssignableFrom(cls)) {
-        val c = companion[GenericCompanion[Seq]](cls)
-        val v = p.findValueDeserializer(cfg, t.containedType(0), bp)
-        new SeqDeserializer[Any, Seq](c, v)
+      if (classOf[GenSeq[_]].isAssignableFrom(cls)) {
+        val c = companion[GenericCompanion[GenSeq]](cls)
+        new SeqDeserializer[Any, GenSeq](c, t.containedType(0))
       } else if (classOf[SortedMap[_, _]].isAssignableFrom(cls)) {
         val c = companion[SortedMapFactory[SortedMap]](cls)
         val o = ordering(t.containedType(0))
-        val k = p.findKeyDeserializer(cfg, t.containedType(0), bp)
-        val v = p.findValueDeserializer(cfg, t.containedType(1), bp)
-        new SortedMapDeserializer[Any, Any](c, o, k, v)
-      } else if (classOf[Map[_, _]].isAssignableFrom(cls)) {
-        val c = companion[GenMapFactory[Map]](cls)
-        val k = p.findKeyDeserializer(cfg, t.containedType(0), bp)
-        val v = p.findValueDeserializer(cfg, t.containedType(1), bp)
-        new MapDeserializer[Any, Any](c, k, v)
-      } else if (classOf[Set[_]].isAssignableFrom(cls)) {
+        new SortedMapDeserializer[Any, Any](c, o, t.containedType(0), t.containedType(1))
+      } else if (classOf[GenMap[_, _]].isAssignableFrom(cls)) {
+        val c = companion[GenMapFactory[GenMap]](cls)
+        new MapDeserializer[Any, Any](c, t.containedType(0), t.containedType(1))
+      } else if (classOf[GenSet[_]].isAssignableFrom(cls)) {
         if (classOf[SortedSet[_]].isAssignableFrom(cls)) {
           val c = companion[SortedSetFactory[SortedSet]](cls)
           val o = ordering(t.containedType(0))
-          val v = p.findValueDeserializer(cfg, t.containedType(0), bp)
-          new SortedSetDeserializer[Any, SortedSet](c, o, v)
+          new SortedSetDeserializer[Any, SortedSet](c, o, t.containedType(0))
         } else if (classOf[BitSet].isAssignableFrom(cls)) {
           val c = companion[BitSetFactory[BitSet]](cls)
           val t = cfg.getTypeFactory.constructType(classOf[Int])
-          val v = p.findValueDeserializer(cfg, t, bp)
-          new BitSetDeserializer[BitSet](c, v)
+          new BitSetDeserializer[BitSet](c, t)
         } else {
-          val c = companion[GenericCompanion[Set]](cls)
-          val v = p.findValueDeserializer(cfg, t.containedType(0), bp)
-          new SeqDeserializer[Any, Set](c, v)
+          val c = companion[GenericCompanion[GenSet]](cls)
+          new SeqDeserializer[Any, GenSet](c, t.containedType(0))
         }
       } else if (classOf[PriorityQueue[_]].isAssignableFrom(cls)) {
         val c = companion[OrderedTraversableFactory[PriorityQueue]](cls)
         val o = ordering(t.containedType(0))
-        val v = p.findValueDeserializer(cfg, t.containedType(0), bp)
-        new OrderedDeserializer[Any, PriorityQueue](c, o , v)
+        new OrderedDeserializer[Any, PriorityQueue](c, o, t.containedType(0))
       } else {
         null
       }
     } else if (classOf[Option[_]].isAssignableFrom(cls)) {
-      val v = p.findValueDeserializer(cfg, t.containedType(0), bp)
-      new OptionDeserializer(v)
+      new OptionDeserializer(t.containedType(0))
     } else if (classOf[Product].isAssignableFrom(cls) && cls.getName.startsWith("scala.Tuple")) {
-      val vs = for (i <- 0 until t.containedTypeCount) yield p.findValueDeserializer(cfg, t.containedType(i), bp)
-      new TupleDeserializer(t, vs.toArray)
+      new TupleDeserializer(t)
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
         case Some(sts) if sts.isCaseClass =>
-          val ds = sts.accessors.map(a => (a.name -> p.findValueDeserializer(cfg, a.`type`, bp)))
-          new CaseClassDeserializer(sts.constructor, sts.accessors, ds.toMap)
+          new CaseClassDeserializer(sts.constructor, sts.accessors)
         case _ =>
           null
       }
@@ -119,26 +108,26 @@ class ScalaDeserializers extends Deserializers.Base {
 }
 
 class ScalaSerializers extends Serializers.Base {
-  override def findSerializer(cfg: SerializationConfig, t: JavaType, bd: BeanDescription, bp: BeanProperty): JsonSerializer[_] = {
+  override def findSerializer(cfg: SerializationConfig, t: JavaType, bd: BeanDescription): JsonSerializer[_] = {
     val cls = t.getRawClass
 
-    if (classOf[Map[_, _]].isAssignableFrom(cls)) {
-      new MapSerializer(t, bp)
-    } else if (classOf[Iterable[_]].isAssignableFrom(cls)) {
+    if (classOf[GenMap[_, _]].isAssignableFrom(cls)) {
+      new MapSerializer(t)
+    } else if (classOf[GenIterable[_]].isAssignableFrom(cls)) {
       var vT = t.containedType(0)
       if (vT == null) vT = cfg.getTypeFactory.constructType(classOf[AnyRef])
-      new IterableSerializer(vT, bp)
+      new IterableSerializer(vT)
     } else if (classOf[Option[_]].isAssignableFrom(cls)) {
-      new OptionSerializer(t, bp)
+      new OptionSerializer(t)
     } else if (classOf[Product].isAssignableFrom(cls) && cls.getName.startsWith("scala.Tuple")) {
-      new TupleSerializer(t, bp)
+      new TupleSerializer(t)
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
-        case Some(sts) if sts.isCaseClass => new CaseClassSerializer(t, sts.accessors, bp)
+        case Some(sts) if sts.isCaseClass => new CaseClassSerializer(t, sts.accessors)
         case _                            => null
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {
-      new SymbolSerializer(t, bp)
+      new SymbolSerializer(t)
     } else {
       null
     }

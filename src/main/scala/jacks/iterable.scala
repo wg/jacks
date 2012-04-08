@@ -6,14 +6,13 @@ import scala.collection._
 import scala.collection.generic._
 import scala.collection.mutable.Builder
 
-import org.codehaus.jackson._
-import org.codehaus.jackson.JsonToken._
-import org.codehaus.jackson.map._
-import org.codehaus.jackson.map.ser.std.SerializerBase
-import org.codehaus.jackson.`type`.JavaType
+import com.fasterxml.jackson.core._
+import com.fasterxml.jackson.core.JsonToken._
+import com.fasterxml.jackson.databind._
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
-class IterableSerializer(t: JavaType, bp: BeanProperty) extends SerializerBase[Iterable[_]](t) {
-  override def serialize(iterable: Iterable[_], g: JsonGenerator, p: SerializerProvider) {
+class IterableSerializer(t: JavaType) extends StdSerializer[GenIterable[_]](t) {
+  override def serialize(iterable: GenIterable[_], g: JsonGenerator, p: SerializerProvider) {
     var s: JsonSerializer[AnyRef] = null
     var c: Class[_] = null
 
@@ -24,7 +23,7 @@ class IterableSerializer(t: JavaType, bp: BeanProperty) extends SerializerBase[I
       if (a ne null) {
         if (a.getClass ne c) {
           c = a.getClass
-          s = p.findValueSerializer(c, bp)
+          s = p.findValueSerializer(c, null)
         }
         s.serialize(a, g, p)
       } else {
@@ -36,10 +35,11 @@ class IterableSerializer(t: JavaType, bp: BeanProperty) extends SerializerBase[I
   }
 }
 
-abstract class IterableDeserializer[T, C](d: JsonDeserializer[_]) extends JsonDeserializer[C] {
+abstract class IterableDeserializer[T, C](t: JavaType) extends JsonDeserializer[C] {
   def newBuilder: Builder[T, C]
 
   override def deserialize(p: JsonParser, ctx: DeserializationContext): C = {
+    val d = ctx.findContextualValueDeserializer(t, null)
     val builder = newBuilder
 
     while (p.nextToken != END_ARRAY) {
@@ -54,22 +54,22 @@ abstract class IterableDeserializer[T, C](d: JsonDeserializer[_]) extends JsonDe
   }
 }
 
-class SeqDeserializer[T, C[T] <: GenTraversable[T]](c: GenericCompanion[C], d: JsonDeserializer[_])
-  extends IterableDeserializer[T, C[_]](d) {
+class SeqDeserializer[T, C[T] <: GenTraversable[T]](c: GenericCompanion[C], t: JavaType)
+  extends IterableDeserializer[T, C[_]](t) {
     def newBuilder = c.newBuilder[T]
 }
 
 class SortedSetDeserializer[T, C[T] <: SortedSet[T] with SortedSetLike[T, C[T]]]
-  (c: SortedSetFactory[C], o: Ordering[T], d: JsonDeserializer[_]) extends IterableDeserializer[T, C[_]](d) {
+  (c: SortedSetFactory[C], o: Ordering[T], t: JavaType) extends IterableDeserializer[T, C[_]](t) {
     def newBuilder = c.newBuilder[T](o)
 }
 
-class BitSetDeserializer[C <: BitSet](c: BitSetFactory[BitSet], d: JsonDeserializer[_])
-  extends IterableDeserializer[Int, BitSet](d) {
+class BitSetDeserializer[C <: BitSet](c: BitSetFactory[BitSet], t: JavaType)
+  extends IterableDeserializer[Int, BitSet](t) {
     def newBuilder = c.newBuilder
 }
 
 class OrderedDeserializer[T, C[T] <: Traversable[T] with GenericOrderedTraversableTemplate[T, C]]
-  (c: OrderedTraversableFactory[C], o: Ordering[T], d: JsonDeserializer[_]) extends IterableDeserializer[T, C[_]](d) {
+  (c: OrderedTraversableFactory[C], o: Ordering[T], t: JavaType) extends IterableDeserializer[T, C[_]](t) {
     def newBuilder = c.newBuilder[T](o)
 }

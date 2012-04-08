@@ -1,10 +1,8 @@
 import sbt._
 
 class project(info: ProjectInfo) extends DefaultProject(info) {
-  val codehaus = "jackson.codehaus.org" at "http://repository.codehaus.org"
-
   override def libraryDependencies = Set(
-    "org.codehaus.jackson" % "jackson-mapper-asl" % "1.9.3",
+    "com.fasterxml.jackson.core" % "jackson-databind" % "2.0.0",
     "org.scala-lang" % "scalap" % crossScalaVersionString,
 
     "org.scalatest" % ("scalatest_" + crossScalaVersionString) % "1.6.1" % "test",

@@ -2,22 +2,21 @@
 
 package com.lambdaworks.jacks
 
-import org.codehaus.jackson._
-import org.codehaus.jackson.JsonToken._
-import org.codehaus.jackson.map._
-import org.codehaus.jackson.map.ser.std.SerializerBase
-import org.codehaus.jackson.`type`.JavaType
+import com.fasterxml.jackson.core._
+import com.fasterxml.jackson.core.JsonToken._
+import com.fasterxml.jackson.databind._
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
 import java.lang.reflect.Constructor
 
-class CaseClassSerializer(t: JavaType, accessors: Array[Accessor], bp: BeanProperty) extends SerializerBase[Product](t) {
+class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSerializer[Product](t) {
   override def serialize(value: Product, g: JsonGenerator, p: SerializerProvider) {
     g.writeStartObject()
 
     for (i <- 0 until accessors.length) {
       val a = accessors(i)
       val v = value.productElement(i).asInstanceOf[AnyRef]
-      val s = p.findValueSerializer(a.`type`, bp)
+      val s = p.findValueSerializer(a.`type`, null)
 
       g.writeFieldName(a.name)
 
@@ -28,19 +27,21 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor], bp: BeanPrope
   }
 }
 
-class CaseClassDeserializer(c: Constructor[_], accessors: Array[Accessor], ds: Map[String, JsonDeserializer[_]]) extends JsonDeserializer[Any] {
-  val fields = accessors.map(_.name -> None).toMap[String, Option[Object]]
+class CaseClassDeserializer(c: Constructor[_], accessors: Array[Accessor]) extends JsonDeserializer[Any] {
+  val fields = accessors.map(a => a.name -> None).toMap[String, Option[Object]]
+  val types  = accessors.map(a => a.name -> a.`type`).toMap
 
   override def deserialize(p: JsonParser, ctx: DeserializationContext): Any = {
     var values = fields
 
-    var t = p.getCurrentToken
-    if (t == START_OBJECT) t = p.nextToken
+    var token = p.getCurrentToken
+    if (token == START_OBJECT) token = p.nextToken
 
-    while (t == FIELD_NAME) {
+    while (token == FIELD_NAME) {
       val name = p.getCurrentName
-      val d    = ds.getOrElse(name, null)
-      if (d ne null) {
+      val t    = types.getOrElse(name, null)
+      if (t ne null) {
+        val d = ctx.findContextualValueDeserializer(t, null)
         val value = p.nextToken match {
           case VALUE_NULL => d.getNullValue
           case _          => d.deserialize(p, ctx)
@@ -50,7 +51,7 @@ class CaseClassDeserializer(c: Constructor[_], accessors: Array[Accessor], ds: M
         p.nextToken
         p.skipChildren
       }
-      t = p.nextToken
+      token = p.nextToken
     }
 
     val params = accessors.map { a =>
