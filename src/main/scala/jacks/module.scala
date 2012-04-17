@@ -68,7 +68,7 @@ class ScalaDeserializers extends Deserializers.Base {
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
         case Some(sts) if sts.isCaseClass =>
-          new CaseClassDeserializer(sts.constructor, sts.accessors)
+          new CaseClassDeserializer(t, sts.accessors)
         case _ =>
           null
       }

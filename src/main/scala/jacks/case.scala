@@ -27,7 +27,7 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSe
   }
 }
 
-class CaseClassDeserializer(c: Constructor[_], accessors: Array[Accessor]) extends JsonDeserializer[Any] {
+class CaseClassDeserializer(t: JavaType, accessors: Array[Accessor]) extends JsonDeserializer[Any] {
   val fields = accessors.map(a => a.name -> None).toMap[String, Option[Object]]
   val types  = accessors.map(a => a.name -> a.`type`).toMap
 
@@ -60,7 +60,11 @@ class CaseClassDeserializer(c: Constructor[_], accessors: Array[Accessor]) exten
         case None    => default(a)
       }
     }
-
+    
+    val c = t.getRawClass().getConstructors().find { c => c.getParameterTypes().length == params.length }.getOrElse {
+      throw new JsonMappingException("Unable to find a case accessor for " + t.getRawClass.getName)
+    }
+    
     c.newInstance(params: _*)
   }
 
