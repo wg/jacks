@@ -2,7 +2,7 @@ import sbt._
 
 class project(info: ProjectInfo) extends DefaultProject(info) {
   override def libraryDependencies = Set(
-    "com.fasterxml.jackson.core" % "jackson-databind" % "2.0.0",
+    "com.fasterxml.jackson.core" % "jackson-databind" % "2.0.1",
     "org.scala-lang" % "scalap" % crossScalaVersionString,
 
     "org.scalatest" %% "scalatest" % "1.6.1" % "test",

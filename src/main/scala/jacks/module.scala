@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.deser._
 import com.fasterxml.jackson.databind.ser._
 import com.fasterxml.jackson.databind.`type`._
 
-import java.lang.reflect.Method
+import java.lang.reflect.{Constructor, Method}
 
 import tools.scalap.scalax.rules.scalasig.ScalaSig
 
@@ -146,7 +146,12 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
   val cls = sig.topLevelClasses.head.asInstanceOf[ClassSymbol]
 
   def isCaseClass = cls.isCase
-  def constructor = `type`.getRawClass.getDeclaredConstructors.head
+  def constructor: Constructor[_] = {
+    val types = accessors.map(_.`type`.getRawClass)
+    `type`.getRawClass.getDeclaredConstructors.find {
+      _.getParameterTypes.zip(types).forall { case (a, b) => a.isAssignableFrom(b) }
+    }.get
+  }
 
   def accessors: Array[Accessor] = {
     var list  = collection.mutable.ListBuffer[Accessor]()
@@ -189,6 +194,7 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
 
 object ScalaTypeSig {
   import tools.scalap.scalax.rules.scalasig.{ScalaSigParser, Symbol}
+  import scala.collection.immutable._
 
   def apply(tf: TypeFactory, t: JavaType): Option[ScalaTypeSig] = {
     ScalaSigParser.parse(t.getRawClass) match {
@@ -197,7 +203,7 @@ object ScalaTypeSig {
     }
   }
 
-  val types = immutable.Map[String, Class[_]](
+  val types = Map[String, Class[_]](
     "scala.Boolean"       -> classOf[Boolean],
     "scala.Byte"          -> classOf[Byte],
     "scala.Char"          -> classOf[Char],
