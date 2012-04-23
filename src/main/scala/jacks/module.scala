@@ -17,7 +17,7 @@ import java.lang.reflect.Method
 import tools.scalap.scalax.rules.scalasig.ScalaSig
 
 class ScalaModule extends Module {
-  def version       = new Version(2, 0, 0, null, "com.lambdaworks", "jacks")
+  def version       = new Version(2, 0, 1, null, "com.lambdaworks", "jacks")
   def getModuleName = "ScalaModule"
 
   def setupModule(ctx: Module.SetupContext) {
