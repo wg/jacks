@@ -29,8 +29,11 @@ case class Aliased(
 )
 
 case class Parameterized[T](value: T)
-
 case class NoDefault(int: Int, string: String)
+case class Constructors(var value: String) {
+  private def this() { this(null) }
+  private def this(int: Int) { this(int.toString) }
+}
 
 class CaseClassSuite extends JacksTestSuite {
   test("primitive types correct") {
@@ -83,6 +86,10 @@ class CaseClassSuite extends JacksTestSuite {
   test("property without default is null") {
     read[NoDefault]("""{"int": 1}""").string should equal (null)
     rw(NoDefault(1, null)) should equal (NoDefault(1, null))
+  }
+
+  test("correct constructor found") {
+    rw(Constructors("value")) should equal (Constructors("value"))
   }
 }
 

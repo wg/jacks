@@ -148,8 +148,11 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
   def isCaseClass = cls.isCase
   def constructor: Constructor[_] = {
     val types = accessors.map(_.`type`.getRawClass)
-    `type`.getRawClass.getDeclaredConstructors.find {
-      _.getParameterTypes.zip(types).forall { case (a, b) => a.isAssignableFrom(b) }
+    `type`.getRawClass.getDeclaredConstructors.find { c =>
+      val pairs = c.getParameterTypes.zip(types)
+      pairs.length == types.length && pairs.forall {
+        case (a, b) => a.isAssignableFrom(b)
+      }
     }.get
   }
 
