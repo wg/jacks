@@ -131,6 +131,24 @@ class JacksMapperSuite extends JacksTestSuite {
   }
 }
 
+class UntypedObjectDeserializerSuite extends JacksTestSuite {
+  import com.fasterxml.jackson.databind.DeserializationFeature._
+  import JacksMapper._
+
+  test("reading JSON object returns Scala Map") {
+    read[AnyRef]("""{"one":1,"two":[2]}""") should equal (Map("one" -> 1, "two" -> List(2)))
+  }
+
+  test("reading JSON array returns Scala List") {
+    read[AnyRef]("[1, 2, 3]") should equal (List(1, 2, 3))
+  }
+
+  test("reading JSON array returns Java Array") {
+    val r = mapper.reader(USE_JAVA_ARRAY_FOR_JSON_ARRAY).withType(classOf[AnyRef])
+    r.readValue[AnyRef]("[1, 2, 3]") should equal (Array(1, 2, 3))
+  }
+}
+
 trait JacksTestSuite extends FunSuite with ShouldMatchers {
   import JacksMapper._
 

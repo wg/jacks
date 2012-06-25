@@ -213,6 +213,8 @@ case class CaseClass(
 abstract class ScalaModuleSpec(name: String) extends Properties(name) {
   import JacksMapper._
 
+  def r[T](s: String)(implicit m: Manifest[T]): T = readValue(s)
+
   def rw[T](v: T)(implicit m: Manifest[T]): T = {
     val t = resolve(m)
     val s = mapper.writeValueAsString(v)

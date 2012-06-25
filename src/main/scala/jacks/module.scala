@@ -74,6 +74,8 @@ class ScalaDeserializers extends Deserializers.Base {
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {
       new SymbolDeserializer
+    } else if (classOf[AnyRef].equals(cls)) {
+      new UntypedObjectDeserializer(cfg)
     } else {
       null
     }
