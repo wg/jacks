@@ -4,7 +4,7 @@ import Keys._
 object JacksBuild extends Build {
   val buildSettings = Project.defaultSettings ++ Seq(
     name         := "jacks",
-    version      := "2.0.2",
+    version      := "2.0.4",
     organization := "com.lambdaworks",
     scalaVersion := "2.9.2",
 

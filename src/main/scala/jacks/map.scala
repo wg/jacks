@@ -41,6 +41,8 @@ class MapSerializer(t: JavaType) extends StdSerializer[GenMap[_, _]](t) {
 
     g.writeEndObject()
   }
+
+  override def isEmpty(v: GenMap[_, _]) = v.isEmpty
 }
 
 abstract class GenMapDeserializer[K, V](k: JavaType, v: JavaType) extends JsonDeserializer[GenMap[_, _]] {

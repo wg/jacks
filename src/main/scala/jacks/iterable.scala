@@ -33,6 +33,8 @@ class IterableSerializer(t: JavaType) extends StdSerializer[GenIterable[_]](t) {
 
     g.writeEndArray()
   }
+
+  override def isEmpty(v: GenIterable[_]) = v.isEmpty
 }
 
 abstract class IterableDeserializer[T, C](t: JavaType) extends JsonDeserializer[C] {

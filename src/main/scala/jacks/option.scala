@@ -17,6 +17,8 @@ class OptionSerializer(t: JavaType) extends StdSerializer[Option[_]](t) {
         p.defaultSerializeNull(g)
     }
   }
+
+  override def isEmpty(v: Option[_]) = v.isEmpty
 }
 
 class OptionDeserializer(t: JavaType) extends JsonDeserializer[Option[_]] {
