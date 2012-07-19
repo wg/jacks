@@ -2,6 +2,8 @@
 
 package com.lambdaworks.jacks
 
+import com.fasterxml.jackson.annotation._
+
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 
@@ -34,6 +36,10 @@ case class Constructors(var value: String) {
   private def this() { this(null) }
   private def this(int: Int) { this(int.toString) }
 }
+
+case class Annotated(
+  @JsonProperty("FOO") foo: String
+)
 
 class CaseClassSuite extends JacksTestSuite {
   test("primitive types correct") {

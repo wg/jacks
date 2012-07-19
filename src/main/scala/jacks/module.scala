@@ -6,12 +6,15 @@ import scala.collection._
 import scala.collection.generic._
 import scala.collection.mutable.PriorityQueue
 
+import com.fasterxml.jackson.annotation._
+
 import com.fasterxml.jackson.core._
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.deser._
 import com.fasterxml.jackson.databind.ser._
 import com.fasterxml.jackson.databind.`type`._
 
+import java.lang.annotation.Annotation
 import java.lang.reflect.{Constructor, Method}
 
 import tools.scalap.scalax.rules.scalasig.ScalaSig
@@ -68,7 +71,7 @@ class ScalaDeserializers extends Deserializers.Base {
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
         case Some(sts) if sts.isCaseClass =>
-          new CaseClassDeserializer(sts.constructor, sts.accessors)
+          new CaseClassDeserializer(sts.constructor, sts.annotatedAccessors)
         case _ =>
           null
       }
@@ -125,7 +128,7 @@ class ScalaSerializers extends Serializers.Base {
       new TupleSerializer(t)
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
-        case Some(sts) if sts.isCaseClass => new CaseClassSerializer(t, sts.accessors)
+        case Some(sts) if sts.isCaseClass => new CaseClassSerializer(t, sts.annotatedAccessors)
         case _                            => null
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {
@@ -148,7 +151,7 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
   val cls = sig.topLevelClasses.head.asInstanceOf[ClassSymbol]
 
   def isCaseClass = cls.isCase
-  def constructor: Constructor[_] = {
+  lazy val constructor: Constructor[_] = {
     val types = accessors.map(_.`type`.getRawClass)
     `type`.getRawClass.getDeclaredConstructors.find { c =>
       val pairs = c.getParameterTypes.zip(types)
@@ -158,7 +161,7 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
     }.get
   }
 
-  def accessors: Array[Accessor] = {
+  lazy val accessors: Array[Accessor] = {
     var list  = collection.mutable.ListBuffer[Accessor]()
     var index = 0
 
@@ -176,6 +179,16 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
     Some(m)
   } catch {
     case e:NoSuchMethodException => None
+  }
+
+  def annotatedAccessors: Array[Accessor] = {
+    accessors.zip(constructor.getParameterAnnotations).map {
+      case (accessor: Accessor, annotations: Array[Annotation]) =>
+        annotations.foldLeft(accessor) {
+          case (accessor, a:JsonProperty) if a.value != "" => accessor.copy(name = a.value)
+          case (accessor, _)                               => accessor
+        }
+    }.toArray
   }
 
   lazy val contained = (0 until `type`.containedTypeCount).map {
