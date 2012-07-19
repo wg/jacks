@@ -3,6 +3,7 @@
 package com.lambdaworks.jacks
 
 import com.fasterxml.jackson.annotation._
+import com.fasterxml.jackson.annotation.JsonInclude.Include
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
@@ -37,8 +38,19 @@ case class Constructors(var value: String) {
   private def this(int: Int) { this(int.toString) }
 }
 
-case class Annotated(
-  @JsonProperty("FOO") foo: String
+case class Empty(
+  @JsonInclude(Include.NON_EMPTY) list:   List[Int]        = Nil,
+  @JsonInclude(Include.NON_EMPTY) map:    Map[String, Int] = Map.empty,
+  @JsonInclude(Include.NON_EMPTY) option: Option[Int]      = None
+)
+
+case class PropertyAnnotation(@JsonProperty("FOO") foo: String)
+case class IgnoreAnnotation(@JsonIgnore foo: String = null, bar: String)
+case class IncludeAnnotation(
+  @JsonInclude(Include.ALWAYS)      always:     Int         = 0,
+  @JsonInclude(Include.NON_DEFAULT) nonDefault: Int         = 1,
+  @JsonInclude(Include.NON_EMPTY)   nonEmpty:   Option[Int] = None,
+  @JsonInclude(Include.NON_NULL)    nonNull:    String      = null
 )
 
 class CaseClassSuite extends JacksTestSuite {
@@ -96,6 +108,32 @@ class CaseClassSuite extends JacksTestSuite {
 
   test("correct constructor found") {
     rw(Constructors("value")) should equal (Constructors("value"))
+  }
+
+  test("JsonGenerator.isEmpty correct") {
+    write(Empty())                      should equal ("""{}""")
+    write(Empty(list = List(1)))        should equal ("""{"list":[1]}""")
+    write(Empty(map = Map("one" -> 1))) should equal ("""{"map":{"one":1}}""")
+    write(Empty(option = Some(1)))      should equal ("""{"option":1}""")
+  }
+
+  test("@JsonProperty handled correctly") {
+    val json = """{"FOO":"a"}"""
+    write(PropertyAnnotation("a")) should equal (json)
+    read[PropertyAnnotation](json) should equal (PropertyAnnotation("a"))
+  }
+
+  test("@JsonIgnore handled correctly") {
+    val json = """{"bar":"b"}"""
+    write(IgnoreAnnotation("a", "b")) should equal (json)
+    read[IgnoreAnnotation](json) should equal (IgnoreAnnotation(null, "b"))
+  }
+
+  test("@JsonInclude handled correctly") {
+    write(IncludeAnnotation())                   should equal ("""{"always":0}""")
+    write(IncludeAnnotation(nonDefault = 3))     should equal ("""{"always":0,"nonDefault":3}""")
+    write(IncludeAnnotation(nonEmpty = Some(2))) should equal ("""{"always":0,"nonEmpty":2}""")
+    write(IncludeAnnotation(nonNull = "a"))      should equal ("""{"always":0,"nonNull":"a"}""")
   }
 }
 

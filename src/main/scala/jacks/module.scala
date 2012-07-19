@@ -7,6 +7,7 @@ import scala.collection.generic._
 import scala.collection.mutable.PriorityQueue
 
 import com.fasterxml.jackson.annotation._
+import com.fasterxml.jackson.annotation.JsonInclude.Include
 
 import com.fasterxml.jackson.core._
 import com.fasterxml.jackson.databind._
@@ -142,7 +143,9 @@ class ScalaSerializers extends Serializers.Base {
 case class Accessor(
   name:    String,
   `type`:  JavaType,
-  default: Option[Method]
+  default: Option[Method],
+  ignored: Boolean = false,
+  include: Include = Include.ALWAYS
 )
 
 class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig) {
@@ -185,7 +188,9 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
     accessors.zip(constructor.getParameterAnnotations).map {
       case (accessor: Accessor, annotations: Array[Annotation]) =>
         annotations.foldLeft(accessor) {
-          case (accessor, a:JsonProperty) if a.value != "" => accessor.copy(name = a.value)
+          case (accessor, a:JsonProperty) if a.value != "" => accessor.copy(name    = a.value)
+          case (accessor, a:JsonIgnore)                    => accessor.copy(ignored = a.value)
+          case (accessor, a:JsonInclude)                   => accessor.copy(include = a.value)
           case (accessor, _)                               => accessor
         }
     }.toArray

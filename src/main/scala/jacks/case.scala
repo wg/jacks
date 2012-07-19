@@ -2,6 +2,7 @@
 
 package com.lambdaworks.jacks
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include._
 import com.fasterxml.jackson.core._
 import com.fasterxml.jackson.core.JsonToken._
 import com.fasterxml.jackson.databind._
@@ -17,13 +18,24 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSe
       val a = accessors(i)
       val v = value.productElement(i).asInstanceOf[AnyRef]
       val s = p.findValueSerializer(a.`type`, null)
-
-      g.writeFieldName(a.name)
-
-      if (v != null) s.serialize(v, g, p) else p.defaultSerializeNull(g)
+      if (!a.ignored && include(a, s, v)) {
+        g.writeObjectField(a.name, v)
+      }
     }
 
     g.writeEndObject()
+  }
+
+  @inline final def include(a: Accessor, s: JsonSerializer[AnyRef], v: AnyRef): Boolean = a.include match {
+    case ALWAYS      => true
+    case NON_DEFAULT => default(a) != v
+    case NON_EMPTY   => !s.isEmpty(v)
+    case NON_NULL    => v != null
+  }
+
+  @inline final def default(a: Accessor) = a.default match {
+    case Some(m) => m.invoke(null)
+    case None    => null
   }
 }
 
@@ -64,7 +76,7 @@ class CaseClassDeserializer(c: Constructor[_], accessors: Array[Accessor]) exten
     c.newInstance(params: _*)
   }
 
-  def default(a: Accessor) = a.default match {
+  @inline final def default(a: Accessor) = a.default match {
     case Some(m) => m.invoke(null)
     case None    => null
   }
