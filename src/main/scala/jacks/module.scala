@@ -21,7 +21,7 @@ import java.lang.reflect.{Constructor, Method}
 import tools.scalap.scalax.rules.scalasig.ScalaSig
 
 class ScalaModule extends Module {
-  def version       = new Version(2, 0, 4, null, "com.lambdaworks", "jacks")
+  def version       = new Version(2, 0, 5, null, "com.lambdaworks", "jacks")
   def getModuleName = "ScalaModule"
 
   def setupModule(ctx: Module.SetupContext) {
@@ -164,7 +164,7 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
     }.get
   }
 
-  lazy val accessors: Array[Accessor] = {
+  lazy val accessors: List[Accessor] = {
     var list  = collection.mutable.ListBuffer[Accessor]()
     var index = 0
 
@@ -174,7 +174,7 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
       list  += Accessor(sym.name, resolve(sym.infoType), default(index))
     }
 
-    list.toArray
+    list.toList
   }
 
   def default(index: Int): Option[Method] = try {
@@ -185,7 +185,7 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
   }
 
   def annotatedAccessors: Array[Accessor] = {
-    accessors.zip(constructor.getParameterAnnotations).map {
+    classAnnotatedAccessors.zip(constructor.getParameterAnnotations).map {
       case (accessor: Accessor, annotations: Array[Annotation]) =>
         annotations.foldLeft(accessor) {
           case (accessor, a:JsonProperty) if a.value != "" => accessor.copy(name    = a.value)
@@ -194,6 +194,16 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
           case (accessor, _)                               => accessor
         }
     }.toArray
+  }
+
+  def classAnnotatedAccessors: List[Accessor] = {
+    `type`.getRawClass.getAnnotations.foldLeft(accessors) {
+      (accessors: List[Accessor], a: Annotation) => a match {
+        case (a:JsonIgnoreProperties) => accessors.filter(x => !a.value.contains(x.name))
+        case (a:JsonInclude)          => accessors.map(_.copy(include = a.value))
+        case (_)                      => accessors
+      }
+    }
   }
 
   lazy val contained = (0 until `type`.containedTypeCount).map {

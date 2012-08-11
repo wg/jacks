@@ -53,6 +53,10 @@ case class IncludeAnnotation(
   @JsonInclude(Include.NON_NULL)    nonNull:    String      = null
 )
 
+@JsonInclude(Include.NON_NULL)
+@JsonIgnoreProperties(Array("ignored"))
+case class ClassAnnotations(foo: String = null, ignored: String = "bar")
+
 class CaseClassSuite extends JacksTestSuite {
   test("primitive types correct") {
     rw(Primitives(boolean = false)) should equal (Primitives(boolean = false))
@@ -129,11 +133,18 @@ class CaseClassSuite extends JacksTestSuite {
     read[IgnoreAnnotation](json) should equal (IgnoreAnnotation(null, "b"))
   }
 
+  test("@JsonIgnoreProperties handled correctly") {
+    write(ClassAnnotations("a")) should equal ("""{"foo":"a"}""")
+  }
+
   test("@JsonInclude handled correctly") {
     write(IncludeAnnotation())                   should equal ("""{"always":0}""")
     write(IncludeAnnotation(nonDefault = 3))     should equal ("""{"always":0,"nonDefault":3}""")
     write(IncludeAnnotation(nonEmpty = Some(2))) should equal ("""{"always":0,"nonEmpty":2}""")
     write(IncludeAnnotation(nonNull = "a"))      should equal ("""{"always":0,"nonNull":"a"}""")
+
+    write(ClassAnnotations())    should equal ("""{}""")
+    write(ClassAnnotations("a")) should equal ("""{"foo":"a"}""")
   }
 }
 
