@@ -19,7 +19,8 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSe
       val v = value.productElement(i).asInstanceOf[AnyRef]
       val s = p.findValueSerializer(a.`type`, null)
       if (!a.ignored && include(a, s, v)) {
-        g.writeObjectField(a.name, v)
+        g.writeFieldName(a.name)
+        if (v != null) s.serialize(v, g, p) else p.defaultSerializeNull(g)
       }
     }
 

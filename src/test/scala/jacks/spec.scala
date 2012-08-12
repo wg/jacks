@@ -89,9 +89,14 @@ object MutableMapSpec extends ScalaModuleSpec("") {
   import MutableCollections._
 
   property("HashMap[String,Int]")       = forAll { (m: HashMap[String,Int])       => m == rw(m) }
-  property("WeakHashMap[String,Int]")   = forAll { (m: WeakHashMap[String,Int])   => m == rw(m) }
   property("LinkedHashMap[String,Int]") = forAll { (m: LinkedHashMap[String,Int]) => m == rw(m) }
   property("ListMap[String,Int]")       = forAll { (m: ListMap[String,Int])       => m == rw(m) }
+
+  property("WeakHashMap[String,Int]") = forAll {
+    (m: HashMap[String,Int]) =>
+      val weakMap = WeakHashMap.empty ++ m
+      weakMap == rw(weakMap)
+  }
 
   // unsupported
   //property("OpenHashMap[String,Int]")   = forAll { (m: OpenHashMap[String,Int])   => m == rw(m) }
@@ -159,10 +164,10 @@ object TupleSpec extends ScalaModuleSpec("Tuple") {
     }
   }
 
-  property("(Int) specialization")         = rw(Tuple1(1)).getClass == classOf[Tuple1$mcI$sp]
-  property("(Int, Int) specialization")    = rw((1, 2)).getClass    == classOf[Tuple2$mcII$sp]
-  property("(Double, Int) specialization") = rw((1.0, 2)).getClass  == classOf[Tuple2$mcDI$sp]
-  property("(Long, Long) specialization")  = rw((1L, 2L)).getClass  == classOf[Tuple2$mcJJ$sp]
+  property("(Int) specialization")         = rw(Tuple1(1)).getClass == Tuple1(1).getClass
+  property("(Int, Int) specialization")    = rw((1, 2)).getClass    == (1, 2).getClass
+  property("(Double, Int) specialization") = rw((1.0, 2)).getClass  == (1.0, 2).getClass
+  property("(Long, Long) specialization")  = rw((1L, 2L)).getClass  == (1L, 2L).getClass
 }
 
 object SymbolSpec extends ScalaModuleSpec("Symbol") {
@@ -318,8 +323,6 @@ object MutableCollections extends ArbitraryCollections {
     }
 
   implicit def arbitraryHashMap[K: Arbitrary, V: Arbitrary]: Arbitrary[HashMap[K, V]] = arbitraryMap[K, V, HashMap](HashMap)
-  implicit def arbitraryWeakHashMap[K: Arbitrary, V: Arbitrary]: Arbitrary[WeakHashMap[K, V]] =
-    arbitraryMap[K, V, WeakHashMap](WeakHashMap)
   implicit def arbitraryLinkedHashMap[K: Arbitrary, V: Arbitrary]: Arbitrary[LinkedHashMap[K, V]] =
     arbitraryMap[K, V, LinkedHashMap](LinkedHashMap)
   implicit def arbitraryListMap[K: Arbitrary, V: Arbitrary]: Arbitrary[ListMap[K, V]] = arbitraryMap[K, V, ListMap](ListMap)

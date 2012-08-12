@@ -8,6 +8,7 @@ import scala.collection.mutable.PriorityQueue
 
 import com.fasterxml.jackson.annotation._
 import com.fasterxml.jackson.annotation.JsonInclude.Include
+import com.fasterxml.jackson.annotation.JsonInclude.Include._
 
 import com.fasterxml.jackson.core._
 import com.fasterxml.jackson.databind._
@@ -46,7 +47,11 @@ class ScalaDeserializers extends Deserializers.Base {
         val c = companion[GenMapFactory[GenMap]](cls)
         new MapDeserializer[Any, Any](c, t.containedType(0), t.containedType(1))
       } else if (classOf[GenSet[_]].isAssignableFrom(cls)) {
-        if (classOf[SortedSet[_]].isAssignableFrom(cls)) {
+        if (classOf[BitSet].isAssignableFrom(cls)) {
+          val c = companion[BitSetFactory[BitSet]](cls)
+          val t = cfg.getTypeFactory.constructType(classOf[Int])
+          new BitSetDeserializer[BitSet](c, t)
+        } else if (classOf[SortedSet[_]].isAssignableFrom(cls)) {
           val c = companion[SortedSetFactory[SortedSet]](cls)
           val o = ordering(t.containedType(0))
           new SortedSetDeserializer[Any, SortedSet](c, o, t.containedType(0))
@@ -145,7 +150,7 @@ case class Accessor(
   `type`:  JavaType,
   default: Option[Method],
   ignored: Boolean = false,
-  include: Include = Include.ALWAYS
+  include: Include = ALWAYS
 )
 
 class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig) {
@@ -178,7 +183,7 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
   }
 
   def default(index: Int): Option[Method] = try {
-    val m = `type`.getRawClass.getDeclaredMethod("init$default$%d".format(index))
+    val m = `type`.getRawClass.getDeclaredMethod("apply$default$%d".format(index))
     Some(m)
   } catch {
     case e:NoSuchMethodException => None
@@ -198,11 +203,13 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
 
   def classAnnotatedAccessors: List[Accessor] = {
     `type`.getRawClass.getAnnotations.foldLeft(accessors) {
-      (accessors: List[Accessor], a: Annotation) => a match {
-        case (a:JsonIgnoreProperties) => accessors.filter(x => !a.value.contains(x.name))
-        case (a:JsonInclude)          => accessors.map(_.copy(include = a.value))
-        case (_)                      => accessors
-      }
+      case (accessors, ignore: JsonIgnoreProperties) =>
+        val ignored = ignore.value.toSet
+        accessors.map(a => a.copy(ignored = ignored.contains(a.name)))
+      case (accessors, include: JsonInclude) =>
+        accessors.map(a => a.copy(include = include.value))
+      case (accessors, _) =>
+        accessors
     }
   }
 

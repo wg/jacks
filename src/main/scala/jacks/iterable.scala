@@ -11,8 +11,8 @@ import com.fasterxml.jackson.core.JsonToken._
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
-class IterableSerializer(t: JavaType) extends StdSerializer[GenIterable[_]](t) {
-  override def serialize(iterable: GenIterable[_], g: JsonGenerator, p: SerializerProvider) {
+class IterableSerializer(t: JavaType) extends StdSerializer[GenIterable[Any]](t) {
+  override def serialize(iterable: GenIterable[Any], g: JsonGenerator, p: SerializerProvider) {
     var s: JsonSerializer[AnyRef] = null
     var c: Class[_] = null
 
@@ -34,7 +34,7 @@ class IterableSerializer(t: JavaType) extends StdSerializer[GenIterable[_]](t) {
     g.writeEndArray()
   }
 
-  override def isEmpty(v: GenIterable[_]) = v.isEmpty
+  override def isEmpty(v: GenIterable[Any]) = v.isEmpty
 }
 
 abstract class IterableDeserializer[T, C](t: JavaType) extends JsonDeserializer[C] {

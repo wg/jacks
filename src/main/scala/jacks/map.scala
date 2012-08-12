@@ -11,8 +11,8 @@ import com.fasterxml.jackson.core.JsonToken._
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
-class MapSerializer(t: JavaType) extends StdSerializer[GenMap[_, _]](t) {
-  override def serialize(map: GenMap[_, _], g: JsonGenerator, p: SerializerProvider) {
+class MapSerializer(t: JavaType) extends StdSerializer[GenMap[Any, Any]](t) {
+  override def serialize(map: GenMap[Any, Any], g: JsonGenerator, p: SerializerProvider) {
     var kS, vS: JsonSerializer[AnyRef] = null
     var kC, vC: Class[_] = null
 
@@ -42,7 +42,7 @@ class MapSerializer(t: JavaType) extends StdSerializer[GenMap[_, _]](t) {
     g.writeEndObject()
   }
 
-  override def isEmpty(v: GenMap[_, _]) = v.isEmpty
+  override def isEmpty(v: GenMap[Any, Any]) = v.isEmpty
 }
 
 abstract class GenMapDeserializer[K, V](k: JavaType, v: JavaType) extends JsonDeserializer[GenMap[_, _]] {
