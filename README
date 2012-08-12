@@ -71,6 +71,8 @@ Maven Artifacts
 
   Releases of jacks are available in the maven central repository:
 
+  "com.lambdaworks" % "jacks" % "2.0.5"
+
   <dependency>
     <groupId>com.lambdaworks</groupId>
     <artifactId>jacks</artifactId>

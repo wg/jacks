@@ -7,9 +7,6 @@ import org.scalacheck.Prop.forAll
 
 import scala.reflect.BeanProperty
 
-import org.junit.runner.RunWith
-
-@RunWith(classOf[ScalaCheckRunner])
 object ImmutableCollectionSpec extends ScalaModuleSpec("") {
   import scala.collection.immutable._
   import ImmutableCollections._
@@ -33,7 +30,6 @@ object ImmutableCollectionSpec extends ScalaModuleSpec("") {
   property("List[(Int, Int)]") = forAll { (c: List[(Int, Int)]) => c == rw(c) }
 }
 
-@RunWith(classOf[ScalaCheckRunner])
 object MutableCollectionSpec extends ScalaModuleSpec("") {
   import scala.collection.mutable._
   import MutableCollections._
@@ -63,7 +59,6 @@ object MutableCollectionSpec extends ScalaModuleSpec("") {
   property("null") = List("one", null) == rw(List("one", null))
 }
 
-@RunWith(classOf[ScalaCheckRunner])
 object ImmutableMapSpec extends ScalaModuleSpec("") {
   import scala.collection.immutable._
   import ImmutableCollections._
@@ -89,7 +84,6 @@ object ImmutableMapSpec extends ScalaModuleSpec("") {
   property("Map[Map[String,Bean]]") = forAll { (m: Map[String,Bean]) => m == rw(m)  }
 }
 
-@RunWith(classOf[ScalaCheckRunner])
 object MutableMapSpec extends ScalaModuleSpec("") {
   import scala.collection.mutable._
   import MutableCollections._
@@ -103,8 +97,6 @@ object MutableMapSpec extends ScalaModuleSpec("") {
   //property("OpenHashMap[String,Int]")   = forAll { (m: OpenHashMap[String,Int])   => m == rw(m) }
 }
 
-
-@RunWith(classOf[ScalaCheckRunner])
 object SortedSetSpec extends ScalaModuleSpec("") {
   import scala.collection.immutable.TreeSet
   import ImmutableCollections._
@@ -122,7 +114,6 @@ object SortedSetSpec extends ScalaModuleSpec("") {
   property("TreeSet[Option[Int]]") = forAll { (c: TreeSet[Option[Int]]) => c == rw(c) }
 }
 
-@RunWith(classOf[ScalaCheckRunner])
 object SortedMapSpec extends ScalaModuleSpec("") {
   import scala.collection.immutable.TreeMap
   import ImmutableCollections._
@@ -130,7 +121,6 @@ object SortedMapSpec extends ScalaModuleSpec("") {
   property("TreeMap[String,Int]")  = forAll { (c: TreeMap[String,Int])  => c == rw(c) }
 }
 
-@RunWith(classOf[ScalaCheckRunner])
 object CollectionWrapperSpec extends ScalaModuleSpec("") {
   import scala.collection.JavaConversions._
 
@@ -142,7 +132,6 @@ object CollectionWrapperSpec extends ScalaModuleSpec("") {
   property("JMap -> Map")    = forAll { (m: Map[String,String]) => m == rw(mapAsJavaMap(m), m) }
 }
 
-@RunWith(classOf[ScalaCheckRunner])
 object OptionSpec extends ScalaModuleSpec("Option") {
   import scala.collection._
   import ScalaCollections._
@@ -154,7 +143,6 @@ object OptionSpec extends ScalaModuleSpec("Option") {
   property("(Int, Int)") = forAll { (o: Option[(Int, Int)])          => o == rw(o) }
 }
 
-@RunWith(classOf[ScalaCheckRunner])
 object TupleSpec extends ScalaModuleSpec("Tuple") {
   property("(Boolean, Byte)")       = forAll { (t: (Boolean, Byte))       => t == rw(t) }
   property("(Char, Double, Int)")   = forAll { (t: (Char, Double, Int))   => t == rw(t) }
@@ -177,12 +165,10 @@ object TupleSpec extends ScalaModuleSpec("Tuple") {
   property("(Long, Long) specialization")  = rw((1L, 2L)).getClass  == classOf[Tuple2$mcJJ$sp]
 }
 
-@RunWith(classOf[ScalaCheckRunner])
 object SymbolSpec extends ScalaModuleSpec("Symbol") {
   property("All") = forAll { (s: Symbol) => s == rw(s) }
 }
 
-@RunWith(classOf[ScalaCheckRunner])
 object CaseClassSpec extends ScalaModuleSpec("CaseClass") {
   property("All") = forAll { (cc: CaseClass) => cc == rw(cc) }
 }
