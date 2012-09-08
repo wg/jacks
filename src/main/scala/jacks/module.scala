@@ -22,7 +22,7 @@ import java.lang.reflect.{Constructor, Method}
 import tools.scalap.scalax.rules.scalasig.ScalaSig
 
 class ScalaModule extends Module {
-  def version       = new Version(2, 0, 5, null, "com.lambdaworks", "jacks")
+  def version       = new Version(2, 0, 6, null, "com.lambdaworks", "jacks")
   def getModuleName = "ScalaModule"
 
   def setupModule(ctx: Module.SetupContext) {
