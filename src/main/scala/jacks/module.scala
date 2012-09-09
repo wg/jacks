@@ -76,10 +76,8 @@ class ScalaDeserializers extends Deserializers.Base {
       new TupleDeserializer(t)
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
-        case Some(sts) if sts.isCaseClass =>
-          new CaseClassDeserializer(sts.constructor, sts.annotatedAccessors)
-        case _ =>
-          null
+        case Some(sts) if sts.isCaseClass => new CaseClassDeserializer(sts.creator)
+        case _                            => null
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {
       new SymbolDeserializer
@@ -139,6 +137,8 @@ class ScalaSerializers extends Serializers.Base {
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {
       new SymbolSerializer(t)
+    } else if (classOf[Enumeration$Val].isAssignableFrom(cls)) {
+      ser.std.ToStringSerializer.instance
     } else {
       null
     }
@@ -159,32 +159,35 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
   val cls = sig.topLevelClasses.head.asInstanceOf[ClassSymbol]
 
   def isCaseClass = cls.isCase
+
   lazy val constructor: Constructor[_] = {
     val types = accessors.map(_.`type`.getRawClass)
     `type`.getRawClass.getDeclaredConstructors.find { c =>
       val pairs = c.getParameterTypes.zip(types)
       pairs.length == types.length && pairs.forall {
-        case (a, b) => a.isAssignableFrom(b)
+        case (a, b) => a.isAssignableFrom(b) || (a == classOf[AnyRef] && b.isPrimitive)
       }
     }.get
   }
 
   lazy val accessors: List[Accessor] = {
-    var list  = collection.mutable.ListBuffer[Accessor]()
-    var index = 0
-
-    for (c <- cls.children if c.isCaseAccessor && !c.isPrivate) {
-      val sym = c.asInstanceOf[MethodSymbol]
-      index += 1
-      list  += Accessor(sym.name, resolve(sym.infoType), default(index))
-    }
-
-    list.toList
+    var index = 1
+    cls.children.foldLeft(List.newBuilder[Accessor]) {
+      (accessors, c) =>
+        if (c.isCaseAccessor && !c.isPrivate) {
+          val sym  = c.asInstanceOf[MethodSymbol]
+          val name = sym.name
+          val typ  = resolve(sym.infoType)
+          accessors += Accessor(name, typ, default(`type`.getRawClass, "apply", index))
+          index += 1
+        }
+        accessors
+    }.result
   }
 
-  def default(index: Int): Option[Method] = try {
-    val m = `type`.getRawClass.getDeclaredMethod("apply$default$%d".format(index))
-    Some(m)
+  def default(cls: Class[_], method: String, index: Int): Option[Method] = try {
+    val name = "%s$default$%d".format(method, index)
+    Some(cls.getDeclaredMethod(name))
   } catch {
     case e:NoSuchMethodException => None
   }
@@ -210,6 +213,26 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
         accessors.map(a => a.copy(include = include.value))
       case (accessors, _) =>
         accessors
+    }
+  }
+
+  def creatorAccessors(m: Method): Array[Accessor] = {
+    val cls   = m.getDeclaringClass
+    var index = 0
+    m.getGenericParameterTypes.zip(m.getParameterAnnotations).map {
+      case (t: java.lang.reflect.Type, annotations: Array[Annotation]) =>
+        val Some(a) = annotations.find(_.isInstanceOf[JsonProperty])
+        val name    = a.asInstanceOf[JsonProperty].value
+        index += 1
+        Accessor(name, tf.constructType(t), default(cls, m.getName, index))
+    }
+  }
+
+  def creator: Creator = {
+    val c = Class.forName(`type`.getRawClass.getName + "$").getField("MODULE$").get(null)
+    c.getClass.getDeclaredMethods.find(_.getAnnotation(classOf[JsonCreator]) != null) match {
+      case Some(m) => new CompanionCreator(m, c, creatorAccessors(m))
+      case None    => new ConstructorCreator(constructor, annotatedAccessors)
     }
   }
 
@@ -244,19 +267,20 @@ object ScalaTypeSig {
   }
 
   val types = Map[String, Class[_]](
-    "scala.Boolean"       -> classOf[Boolean],
-    "scala.Byte"          -> classOf[Byte],
-    "scala.Char"          -> classOf[Char],
-    "scala.Double"        -> classOf[Double],
-    "scala.Int"           -> classOf[Int],
-    "scala.Float"         -> classOf[Float],
-    "scala.Long"          -> classOf[Long],
-    "scala.Short"         -> classOf[Short],
-    "scala.AnyRef"        -> classOf[AnyRef],
-    "scala.Predef.Map"    -> classOf[Map[_, _]],
-    "scala.Predef.Set"    -> classOf[Set[_]],
-    "scala.Predef.String" -> classOf[String],
-    "scala.package.List"  -> classOf[List[_]]
+    "scala.Boolean"           -> classOf[Boolean],
+    "scala.Byte"              -> classOf[Byte],
+    "scala.Char"              -> classOf[Char],
+    "scala.Double"            -> classOf[Double],
+    "scala.Int"               -> classOf[Int],
+    "scala.Float"             -> classOf[Float],
+    "scala.Long"              -> classOf[Long],
+    "scala.Short"             -> classOf[Short],
+    "scala.AnyRef"            -> classOf[AnyRef],
+    "scala.Predef.Map"        -> classOf[Map[_, _]],
+    "scala.Predef.Set"        -> classOf[Set[_]],
+    "scala.Predef.String"     -> classOf[String],
+    "scala.package.List"      -> classOf[List[_]],
+    "scala.Enumeration.Value" -> classOf[Enumeration$Val]
   ).withDefault(Class.forName(_))
 
   def resolve(s: Symbol) = types(s.path)

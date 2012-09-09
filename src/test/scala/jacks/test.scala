@@ -57,6 +57,26 @@ case class IncludeAnnotation(
 @JsonIgnoreProperties(Array("ignored"))
 case class ClassAnnotations(foo: String = null, ignored: String = "bar")
 
+sealed trait AB { @JsonValue def jsonValue: String }
+case object A extends AB { def jsonValue = "A" }
+case object B extends AB { def jsonValue = "B" }
+
+object Editor extends Enumeration {
+  val vi, emacs = Value
+}
+
+case class KitchenSink[T](foo: String, bar: T, v: AB, ed: Editor.Value)
+
+object KitchenSink {
+  @JsonCreator
+  def create[T](
+    @JsonProperty("foo") foo: String,
+    @JsonProperty("bar") bar: T,
+    @JsonProperty("v")   v:   String = "A",
+    @JsonProperty("ed")  ed:  String = "emacs"
+  ): KitchenSink[T] = KitchenSink[T](foo, bar, if (v == "A") A else B, Editor.withName(ed))
+}
+
 class CaseClassSuite extends JacksTestSuite {
   test("primitive types correct") {
     rw(Primitives(boolean = false)) should equal (Primitives(boolean = false))
@@ -97,6 +117,7 @@ class CaseClassSuite extends JacksTestSuite {
 
   test("parameterized types correct") {
     rw(Parameterized[String]("foo")) should equal (Parameterized[String]("foo"))
+    rw(Parameterized[Int](1)) should equal (Parameterized[Int](1))
     rw(Parameterized[List[Int]](List(1))) should equal (Parameterized[List[Int]](List(1)))
   }
 
@@ -145,6 +166,13 @@ class CaseClassSuite extends JacksTestSuite {
 
     write(ClassAnnotations())    should equal ("""{}""")
     write(ClassAnnotations("a")) should equal ("""{"foo":"a"}""")
+  }
+
+  test("@JsonCreator handled correctly") {
+    val kss = KitchenSink[String]("f", "s", B, Editor.vi)
+    val ksi = KitchenSink[Int]("g", 1, A, Editor.emacs)
+    rw(kss) should equal (kss)
+    read[KitchenSink[Int]]("""{"foo":"g","bar":1}""") should equal (ksi)
   }
 }
 

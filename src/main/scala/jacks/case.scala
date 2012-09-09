@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonToken._
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
-import java.lang.reflect.Constructor
+import java.lang.reflect.{Constructor, Method}
 
 class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSerializer[Product](t) {
   override def serialize(value: Product, g: JsonGenerator, p: SerializerProvider) {
@@ -40,9 +40,9 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSe
   }
 }
 
-class CaseClassDeserializer(c: Constructor[_], accessors: Array[Accessor]) extends JsonDeserializer[Any] {
-  val fields = accessors.map(a => a.name -> None).toMap[String, Option[Object]]
-  val types  = accessors.map(a => a.name -> a.`type`).toMap
+class CaseClassDeserializer(c: Creator) extends JsonDeserializer[Any] {
+  val fields = c.accessors.map(a => a.name -> None).toMap[String, Option[Object]]
+  val types  = c.accessors.map(a => a.name -> a.`type`).toMap
 
   override def deserialize(p: JsonParser, ctx: DeserializationContext): Any = {
     var values = fields
@@ -67,18 +67,37 @@ class CaseClassDeserializer(c: Constructor[_], accessors: Array[Accessor]) exten
       token = p.nextToken
     }
 
-    val params = accessors.map { a =>
+    val params = c.accessors.map { a =>
       values(a.name) match {
         case Some(v) => v
-        case None    => default(a)
+        case None    => c.default(a)
       }
     }
 
-    c.newInstance(params: _*)
+    c(params)
   }
+}
 
-  @inline final def default(a: Accessor) = a.default match {
+trait Creator {
+  val accessors: Array[Accessor]
+  def apply(args: Seq[AnyRef]): Any
+  def default(a: Accessor): AnyRef
+}
+
+class ConstructorCreator(c: Constructor[_], val accessors: Array[Accessor]) extends Creator {
+  def apply(args: Seq[AnyRef]) = c.newInstance(args: _*)
+
+  def default(a: Accessor) = a.default match {
     case Some(m) => m.invoke(null)
+    case None    => null
+  }
+}
+
+class CompanionCreator(m: Method, c: Object, val accessors: Array[Accessor]) extends Creator {
+  def apply(args: Seq[AnyRef]) = m.invoke(c, args: _*)
+
+  def default(a: Accessor) = a.default match {
+    case Some(m) => m.invoke(c)
     case None    => null
   }
 }

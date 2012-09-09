@@ -66,6 +66,32 @@ Case Classes
   support the following:
 
     @JsonProperty, @JsonIgnore, @JsonIgnoreProperties, @JsonInclude
+    @JsonCreator
+
+  Jacks normally instantiates case classes via their primary constructor.
+  Alternatively a method of the companion object may be used instead by
+  annotating it with @JsonCreator and ensuring that each method parameter
+  is annotated with @JsonProperty:
+
+    sealed trait AB { @JsonValue def jsonValue: String }
+    case object A extends AB { def jsonValue = "A" }
+    case object B extends AB { def jsonValue = "B" }
+
+    object Editor extends Enumeration {
+      val vi, emacs = Value
+    }
+
+    case class KitchenSink[T](foo: String, bar: T, v: AB, ed: Editor.Value)
+
+    object KitchenSink {
+      @JsonCreator
+      def create[T](
+        @JsonProperty("foo") foo: String,
+        @JsonProperty("bar") bar: T,
+        @JsonProperty("v")   v:   String = "A",
+        @JsonProperty("ed")  ed:  String = "emacs"
+      ): KitchenSink[T] = KitchenSink[T](foo, bar, if (v == "A") A else B, Editor.withName(ed))
+    }
 
 Maven Artifacts
 
