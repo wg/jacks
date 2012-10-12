@@ -4,7 +4,7 @@ jacks - Jackson module for Scala
   types, including mutable & immutable collections, Option, Tuple, Symbol,
   and case classes.
 
-  This version of jacks has been tested against Scala 2.9.2 and Jackson 2.0.6
+  This version of jacks has been tested against Scala 2.9.2 and Jackson 2.1.0
 
   Join the lambdaWorks-OSS Google Group to discuss this project:
 
@@ -97,10 +97,10 @@ Maven Artifacts
 
   Releases of jacks are available in the maven central repository:
 
-  "com.lambdaworks" %% "jacks" % "2.0.6"
+  "com.lambdaworks" %% "jacks" % "2.1.0"
 
   <dependency>
     <groupId>com.lambdaworks</groupId>
     <artifactId>jacks_2.9.2</artifactId>
-    <version>2.0.6</version>
+    <version>2.1.0</version>
   </dependency>
