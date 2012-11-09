@@ -7,7 +7,7 @@ object JacksBuild extends Build {
     version      := "2.1.0",
     organization := "com.lambdaworks",
 
-    crossScalaVersions := Seq("2.9.2", "2.10.0-M7"),
+    crossScalaVersions := Seq("2.9.2", "2.10.0-RC1"),
 
     libraryDependencies <+= scalaVersion("org.scala-lang" % "scalap" % _),
     libraryDependencies ++= Seq(
