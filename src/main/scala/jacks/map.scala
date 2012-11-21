@@ -53,6 +53,8 @@ abstract class GenMapDeserializer[K, V](k: JavaType, v: JavaType) extends JsonDe
     val vD = ctx.findContextualValueDeserializer(v, null)
     val builder = newBuilder
 
+    if (p.getCurrentToken != START_OBJECT) throw ctx.mappingException(classOf[GenMap[_, _]])
+
     while (p.nextToken == FIELD_NAME) {
       val name = p.getCurrentName
 

@@ -44,6 +44,8 @@ abstract class IterableDeserializer[T, C](t: JavaType) extends JsonDeserializer[
     val d = ctx.findContextualValueDeserializer(t, null)
     val builder = newBuilder
 
+    if (!p.isExpectedStartArrayToken) throw ctx.mappingException(t.getRawClass)
+
     while (p.nextToken != END_ARRAY) {
       val value = p.getCurrentToken match {
         case VALUE_NULL => d.getNullValue

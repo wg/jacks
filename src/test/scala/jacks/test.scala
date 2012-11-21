@@ -4,6 +4,7 @@ package com.lambdaworks.jacks
 
 import com.fasterxml.jackson.annotation._
 import com.fasterxml.jackson.annotation.JsonInclude.Include
+import com.fasterxml.jackson.databind.JsonMappingException
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
@@ -173,6 +174,24 @@ class CaseClassSuite extends JacksTestSuite {
     val ksi = KitchenSink[Int]("g", 1, A, Editor.emacs)
     rw(kss) should equal (kss)
     read[KitchenSink[Int]]("""{"foo":"g","bar":1}""") should equal (ksi)
+  }
+}
+
+class InvalidJsonSuite extends JacksTestSuite {
+  test("deserializing case class from non-object throws JsonMappingException") {
+    intercept[JsonMappingException] { read[Primitives]("123") }
+  }
+
+  test("deserializing Iterable from non-array throws JsonMappingException") {
+    intercept[JsonMappingException] { read[List[Int]]("123") }
+  }
+
+  test("deserializing Map from non-object throws JsonMappingException") {
+    intercept[JsonMappingException] { read[Map[String, Any]]("123") }
+  }
+
+  test("deserializing Tuple from non-array throws JsonMappingException") {
+    intercept[JsonMappingException] { read[Tuple2[Any, Any]]("123") }
   }
 }
 

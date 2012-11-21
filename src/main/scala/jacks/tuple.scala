@@ -39,6 +39,8 @@ class TupleDeserializer(t: JavaType) extends JsonDeserializer[Product] {
   override def deserialize(p: JsonParser, ctx: DeserializationContext): Product = {
     val values = new Array[AnyRef](t.containedTypeCount)
 
+    if (!p.isExpectedStartArrayToken) throw ctx.mappingException(t.getRawClass)
+
     for (i <- 0 until values.length) {
       val d = ctx.findContextualValueDeserializer(t.containedType(i), null)
       p.nextToken

@@ -76,7 +76,7 @@ class ScalaDeserializers extends Deserializers.Base {
       new TupleDeserializer(t)
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
-        case Some(sts) if sts.isCaseClass => new CaseClassDeserializer(sts.creator)
+        case Some(sts) if sts.isCaseClass => new CaseClassDeserializer(t, sts.creator)
         case _                            => null
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {

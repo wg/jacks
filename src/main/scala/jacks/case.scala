@@ -40,15 +40,15 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSe
   }
 }
 
-class CaseClassDeserializer(c: Creator) extends JsonDeserializer[Any] {
+class CaseClassDeserializer(t: JavaType, c: Creator) extends JsonDeserializer[Any] {
   val fields = c.accessors.map(a => a.name -> None).toMap[String, Option[Object]]
   val types  = c.accessors.map(a => a.name -> a.`type`).toMap
 
   override def deserialize(p: JsonParser, ctx: DeserializationContext): Any = {
     var values = fields
 
-    var token = p.getCurrentToken
-    if (token == START_OBJECT) token = p.nextToken
+    if (p.getCurrentToken != START_OBJECT) throw ctx.mappingException(t.getRawClass)
+    var token = p.nextToken
 
     while (token == FIELD_NAME) {
       val name = p.getCurrentName
