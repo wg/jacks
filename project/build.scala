@@ -4,14 +4,14 @@ import Keys._
 object JacksBuild extends Build {
   val buildSettings = Project.defaultSettings ++ Seq(
     name         := "jacks",
-    version      := "2.1.0",
+    version      := "2.1.1",
     organization := "com.lambdaworks",
 
-    crossScalaVersions := Seq("2.9.2", "2.10.0-M7"),
+    crossScalaVersions := Seq("2.9.2", "2.10.0-RC2"),
 
     libraryDependencies <+= scalaVersion("org.scala-lang" % "scalap" % _),
     libraryDependencies ++= Seq(
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.0"
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.1"
     ),
 
     libraryDependencies <++= scalaVersion {
@@ -20,8 +20,8 @@ object JacksBuild extends Build {
           Seq("org.scalatest" %% "scalatest" % "1.8" % "test",
               "org.scalacheck" %% "scalacheck" % "1.10.0" % "test")
         case _ =>
-          Seq("org.scalatest" % "scalatest_2.10.0-M7" % "1.9-2.10.0-M7-B1" % "test",
-              "org.scalacheck" % "scalacheck_2.10.0-M7" % "1.10.0" % "test")
+          Seq("org.scalatest" % "scalatest_2.10.0-RC2" % "1.8-B2" % "test",
+              "org.scalacheck" % "scalacheck_2.10.0-RC2" % "1.10.0" % "test")
       }
     },
 
