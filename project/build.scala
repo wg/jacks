@@ -4,31 +4,29 @@ import Keys._
 object JacksBuild extends Build {
   val buildSettings = Project.defaultSettings ++ Seq(
     name         := "jacks",
-    version      := "2.1.1",
+    version      := "2.1.2",
     organization := "com.lambdaworks",
+    scalaVersion := "2.10.0",
 
-    crossScalaVersions := Seq("2.9.2", "2.10.0-RC2"),
+    crossScalaVersions := Seq("2.10.0", "2.9.2"),
 
     libraryDependencies <+= scalaVersion("org.scala-lang" % "scalap" % _),
     libraryDependencies ++= Seq(
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.1"
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.2",
+      "org.scalacheck" %% "scalacheck" % "1.10.0" % "test"
     ),
 
-    libraryDependencies <++= scalaVersion {
-      CrossVersion.partialVersion(_) match {
-        case Some((2, minor)) if minor < 10 =>
-          Seq("org.scalatest" %% "scalatest" % "1.8" % "test",
-              "org.scalacheck" %% "scalacheck" % "1.10.0" % "test")
-        case _ =>
-          Seq("org.scalatest" % "scalatest_2.10.0-RC2" % "1.8-B2" % "test",
-              "org.scalacheck" % "scalacheck_2.10.0-RC2" % "1.10.0" % "test")
-      }
+    libraryDependencies <+= scalaVersion { v =>
+      "org.scalatest" %% "scalatest" % (CrossVersion.partialVersion(v) match {
+        case Some((2, 10)) => "1.9.1"
+        case _             => "1.8"
+      }) % "test"
     },
 
     scalacOptions ++= Seq("-unchecked", "-optimize"),
     scalacOptions <++= scalaVersion map {
       CrossVersion.partialVersion(_) match {
-        case Some((m, n)) if m > 2 || n >= 10 => Seq("-language:higherKinds")
+        case Some((m, n)) if m > 2 || n >= 10 => Seq("-language:_")
         case _                                => Nil
       }
     },
