@@ -70,7 +70,11 @@ class CaseClassDeserializer(t: JavaType, c: Creator) extends JsonDeserializer[An
     val params = c.accessors.map { a =>
       values(a.name) match {
         case Some(v) => v
-        case None    => c.default(a)
+        case None    => {
+          if (c.hasNoDefault(a))
+            throw ctx.mappingException("Required property '"+a.name+"' is missing.")
+          c.default(a)
+        }
       }
     }
 
@@ -82,6 +86,7 @@ trait Creator {
   val accessors: Array[Accessor]
   def apply(args: Seq[AnyRef]): Any
   def default(a: Accessor): AnyRef
+  def hasNoDefault(a: Accessor) = a.default == None
 }
 
 class ConstructorCreator(c: Constructor[_], val accessors: Array[Accessor]) extends Creator {
