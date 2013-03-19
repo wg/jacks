@@ -155,6 +155,7 @@ case class Accessor(
 
 class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig) {
   import tools.scalap.scalax.rules.scalasig.{Method => _,  _}
+  import ScalaTypeSig.findClass
 
   val cls = sig.topLevelClasses.head.asInstanceOf[ClassSymbol]
 
@@ -229,7 +230,7 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
   }
 
   def creator: Creator = {
-    val c = Class.forName(`type`.getRawClass.getName + "$").getField("MODULE$").get(null)
+    val c = findClass(`type`.getRawClass.getName + "$").getField("MODULE$").get(null)
     c.getClass.getDeclaredMethods.find(_.getAnnotation(classOf[JsonCreator]) != null) match {
       case Some(m) => new CompanionCreator(m, c, creatorAccessors(m))
       case None    => new ConstructorCreator(constructor, annotatedAccessors)
@@ -283,7 +284,12 @@ object ScalaTypeSig {
     "scala.package.Seq"       -> classOf[Seq[_]],
     "scala.package.Vector"    -> classOf[Vector[_]],
     "scala.Enumeration.Value" -> classOf[Enumeration$Val]
-  ).withDefault(Class.forName(_))
+  ).withDefault(findClass(_))
 
   def resolve(s: Symbol) = types(s.path)
+
+  def findClass(name: String): Class[_] = {
+    val cl = Thread.currentThread().getContextClassLoader()
+    Class.forName(name, true, cl)
+  }
 }
