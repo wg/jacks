@@ -4,24 +4,18 @@ import Keys._
 object JacksBuild extends Build {
   val buildSettings = Project.defaultSettings ++ Seq(
     name         := "jacks",
-    version      := "2.1.2",
+    version      := "2.1.4",
     organization := "com.lambdaworks",
-    scalaVersion := "2.10.0",
+    scalaVersion := "2.10.1",
 
-    crossScalaVersions := Seq("2.10.0", "2.9.2"),
+    crossScalaVersions := Seq("2.10.1", "2.9.2"),
 
     libraryDependencies <+= scalaVersion("org.scala-lang" % "scalap" % _),
     libraryDependencies ++= Seq(
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.2",
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.4",
+      "org.scalatest" %% "scalatest" % "1.9.1" % "test",
       "org.scalacheck" %% "scalacheck" % "1.10.0" % "test"
     ),
-
-    libraryDependencies <+= scalaVersion { v =>
-      "org.scalatest" %% "scalatest" % (CrossVersion.partialVersion(v) match {
-        case Some((2, 10)) => "1.9.1"
-        case _             => "1.8"
-      }) % "test"
-    },
 
     scalacOptions ++= Seq("-unchecked", "-optimize"),
     scalacOptions <++= scalaVersion map {
