@@ -40,7 +40,7 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSe
   }
 }
 
-class CaseClassDeserializer(t: JavaType, c: Creator) extends JsonDeserializer[Any] {
+class CaseClassDeserializer(t: JavaType, c: Creator, checkNulls: Boolean) extends JsonDeserializer[Any] {
   val fields = c.accessors.map(a => a.name -> None).toMap[String, Option[Object]]
   val types  = c.accessors.map(a => a.name -> a.`type`).toMap
 
@@ -71,7 +71,7 @@ class CaseClassDeserializer(t: JavaType, c: Creator) extends JsonDeserializer[An
       values(a.name) match {
         case Some(v) => v
         case None    => {
-          if (c.hasNoDefault(a))
+          if (checkNulls && c.hasNoDefault(a))
             throw ctx.mappingException("Required property '"+a.name+"' is missing.")
           c.default(a)
         }

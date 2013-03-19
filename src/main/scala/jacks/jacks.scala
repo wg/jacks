@@ -10,9 +10,9 @@ import scala.collection.JavaConversions.JConcurrentMapWrapper
 import java.io._
 import java.util.concurrent.ConcurrentHashMap
 
-trait JacksMapper {
+abstract class JacksMapper(options:JacksOptions) {
   val mapper = new ObjectMapper
-  mapper.registerModule(new ScalaModule)
+  mapper.registerModule(new ScalaModule(options))
 
   def readValue[T: Manifest](src: Array[Byte]): T = mapper.readValue(src, resolve)
   def readValue[T: Manifest](src: InputStream): T = mapper.readValue(src, resolve)
@@ -37,4 +37,6 @@ trait JacksMapper {
   })
 }
 
-object JacksMapper extends JacksMapper
+object JacksMapper extends JacksMapper(JacksOptions.defaults) {
+  def withOptions(opts:JacksOption*) = new JacksMapper(JacksOptions(opts:_*)){}
+}

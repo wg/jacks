@@ -21,17 +21,17 @@ import java.lang.reflect.{Constructor, Method}
 
 import tools.scalap.scalax.rules.scalasig.ScalaSig
 
-class ScalaModule extends Module {
+class ScalaModule(options:JacksOptions) extends Module {
   def version       = new Version(2, 1, 0, null, "com.lambdaworks", "jacks")
   def getModuleName = "ScalaModule"
 
   def setupModule(ctx: Module.SetupContext) {
-    ctx.addSerializers(new ScalaSerializers)
-    ctx.addDeserializers(new ScalaDeserializers)
+    ctx.addSerializers(new ScalaSerializers(options))
+    ctx.addDeserializers(new ScalaDeserializers(options))
   }
 }
 
-class ScalaDeserializers extends Deserializers.Base {
+class ScalaDeserializers(options:JacksOptions) extends Deserializers.Base {
   override def findBeanDeserializer(t: JavaType, cfg: DeserializationConfig, bd: BeanDescription): JsonDeserializer[_] = {
     val cls = t.getRawClass
 
@@ -76,8 +76,9 @@ class ScalaDeserializers extends Deserializers.Base {
       new TupleDeserializer(t)
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
-        case Some(sts) if sts.isCaseClass => new CaseClassDeserializer(t, sts.creator)
-        case _                            => null
+        case Some(sts) if sts.isCaseClass =>
+          new CaseClassDeserializer(t, sts.creator, options.checkCaseClassNulls)
+        case _ => null
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {
       new SymbolDeserializer
@@ -116,7 +117,7 @@ class ScalaDeserializers extends Deserializers.Base {
   }
 }
 
-class ScalaSerializers extends Serializers.Base {
+class ScalaSerializers(options:JacksOptions) extends Serializers.Base {
   override def findSerializer(cfg: SerializationConfig, t: JavaType, bd: BeanDescription): JsonSerializer[_] = {
     val cls = t.getRawClass
 
