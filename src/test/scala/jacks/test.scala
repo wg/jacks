@@ -29,6 +29,8 @@ case class Aliased(
    list:    List[Char]       = List('A'),
    map:     Map[String, Int] = Map("one" -> 1),
    set:     Set[Long]        = Set(1, 2, 3),
+   seq:     Seq[Int]         = Seq(1, 3),
+   vector:  Vector[Int]      = Vector(1, 3),
    string:  String           = "foo"
 )
 
@@ -110,10 +112,12 @@ class CaseClassSuite extends JacksTestSuite {
   }
 
   test("aliased types correct") {
-    rw(Aliased(list = List('B')))     should equal (Aliased(list = List('B')))
-    rw(Aliased(map  = Map("A" -> 1))) should equal (Aliased(map  = Map("A" -> 1)))
-    rw(Aliased(set  = Set(2, 4)))     should equal (Aliased(set  = Set(2, 4)))
-    rw(Aliased(string = "test"))      should equal (Aliased(string = "test"))
+    rw(Aliased(list   = List('B')))     should equal (Aliased(list   = List('B')))
+    rw(Aliased(map    = Map("A" -> 1))) should equal (Aliased(map    = Map("A" -> 1)))
+    rw(Aliased(set    = Set(2, 4)))     should equal (Aliased(set    = Set(2, 4)))
+    rw(Aliased(seq    = Seq(1, 2)))     should equal (Aliased(seq    = Seq(1, 2)))
+    rw(Aliased(vector = Vector(1, 2)))  should equal (Aliased(vector = Vector(1, 2)))
+    rw(Aliased(string = "test"))        should equal (Aliased(string = "test"))
   }
 
   test("parameterized types correct") {

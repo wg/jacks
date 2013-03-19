@@ -280,6 +280,8 @@ object ScalaTypeSig {
     "scala.Predef.Set"        -> classOf[Set[_]],
     "scala.Predef.String"     -> classOf[String],
     "scala.package.List"      -> classOf[List[_]],
+    "scala.package.Seq"       -> classOf[Seq[_]],
+    "scala.package.Vector"    -> classOf[Vector[_]],
     "scala.Enumeration.Value" -> classOf[Enumeration$Val]
   ).withDefault(Class.forName(_))
 
