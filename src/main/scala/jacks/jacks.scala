@@ -10,7 +10,7 @@ import scala.collection.JavaConversions.JConcurrentMapWrapper
 import java.io._
 import java.util.concurrent.ConcurrentHashMap
 
-abstract class JacksMapper(options:JacksOptions) {
+class JacksMapper private (options:JacksOptions) {
   val mapper = new ObjectMapper
   mapper.registerModule(new ScalaModule(options))
 
@@ -38,5 +38,5 @@ abstract class JacksMapper(options:JacksOptions) {
 }
 
 object JacksMapper extends JacksMapper(JacksOptions.defaults) {
-  def withOptions(opts:JacksOption*) = new JacksMapper(JacksOptions(opts:_*)){}
+  def withOptions(opts:JacksOption*) = new JacksMapper(JacksOptions(opts:_*))
 }
