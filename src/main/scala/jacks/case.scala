@@ -71,9 +71,26 @@ class CaseClassDeserializer(t: JavaType, c: Creator, checkNulls: Boolean) extend
       values(a.name) match {
         case Some(v) => v
         case None    => {
-          if (checkNulls && c.hasNoDefault(a))
-            throw ctx.mappingException("Required property '"+a.name+"' is missing.")
-          c.default(a)
+          if (checkNulls) {
+            // refuse to store nulls into case class fields, unless
+            // explicitly requested with a default value
+            // In case of Option, a missing property becomes None
+
+            if (c.hasNoDefault(a)) {
+              val d = ctx.findContextualValueDeserializer(a.`type`, null)
+              val e = d.getNullValue
+              if (e != null) e else
+                throw ctx.mappingException("Required property '"+a.name+"' is missing.")
+            } else {
+              // c hasDefault(a), hence return that
+              c.default(a)
+            }
+          } else {
+            // pre-existing 2.1.4 behavior will use c.default().
+            // default() should use d.getNullValue, but instead
+            // always returns null (even for Option)
+            c.default(a)
+          }
         }
       }
     }
