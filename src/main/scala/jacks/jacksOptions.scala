@@ -5,11 +5,13 @@ package com.lambdaworks.jacks
 sealed abstract class JacksOption
 object JacksOption {
   case class CaseClassCheckNulls(enabled:Boolean) extends JacksOption
+  case class CaseClassSkipNulls(enabled:Boolean) extends JacksOption
 }
 
 
 private[jacks] class JacksOptions(opts:Seq[JacksOption]=Seq.empty) {
   def caseClassCheckNulls=opts contains JacksOption.CaseClassCheckNulls(true)
+  def caseClassSkipNulls =opts contains JacksOption.CaseClassSkipNulls(true)
 }
 private[jacks] object JacksOptions {
   def apply(opts:JacksOption*) =

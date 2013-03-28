@@ -133,8 +133,9 @@ class ScalaSerializers(options:JacksOptions) extends Serializers.Base {
       new TupleSerializer(t)
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
-        case Some(sts) if sts.isCaseClass => new CaseClassSerializer(t, sts.annotatedAccessors)
-        case _                            => null
+        case Some(sts) if sts.isCaseClass =>
+          new CaseClassSerializer(t, sts.annotatedAccessors, options.caseClassSkipNulls)
+        case _ => null
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {
       new SymbolSerializer(t)
@@ -151,7 +152,7 @@ case class Accessor(
   `type`:  JavaType,
   default: Option[Method],
   ignored: Boolean = false,
-  include: Include = ALWAYS
+  include: Option[Include] = None
 )
 
 class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig) {
@@ -200,7 +201,7 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
         annotations.foldLeft(accessor) {
           case (accessor, a:JsonProperty) if a.value != "" => accessor.copy(name    = a.value)
           case (accessor, a:JsonIgnore)                    => accessor.copy(ignored = a.value)
-          case (accessor, a:JsonInclude)                   => accessor.copy(include = a.value)
+          case (accessor, a:JsonInclude)                   => accessor.copy(include = Some(a.value))
           case (accessor, _)                               => accessor
         }
     }.toArray
@@ -212,7 +213,7 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
         val ignored = ignore.value.toSet
         accessors.map(a => a.copy(ignored = ignored.contains(a.name)))
       case (accessors, include: JsonInclude) =>
-        accessors.map(a => a.copy(include = include.value))
+        accessors.map(a => a.copy(include = Some(include.value)))
       case (accessors, _) =>
         accessors
     }
