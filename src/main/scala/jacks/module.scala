@@ -77,7 +77,7 @@ class ScalaDeserializers(options:JacksOptions) extends Deserializers.Base {
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
         case Some(sts) if sts.isCaseClass =>
-          new CaseClassDeserializer(t, sts.creator, options.checkCaseClassNulls)
+          new CaseClassDeserializer(t, sts.creator, options.caseClassCheckNulls)
         case _ => null
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {
