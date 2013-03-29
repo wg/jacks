@@ -38,10 +38,12 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor], skipNulls: Bo
       // We cannot use isEmpty, as otherwise empty iterables would also match. Therefore, the only
       // viable solution here is to match Option's None explicitly, unfortunately.
       //
-      // however, null or None should /not/ be skipped it there is an explicit default. It is
-      // tempting to skip if the value matches the default in any case, but that goes a bit beyond
-      // what skipNull is for (which is to avoid unrequest nulls to appear in the serialization)
-      !skipNulls || !hasNoDefault(a) || (v != null && v != None)
+      // null or None should /not/ be skipped it there is an explicit default, unless the default
+      // happens to be null or None. But do not skip other values just because they match the default.
+      !skipNulls || (v != null && v != None) || (!hasNoDefault(a) && {
+        val df=default(a)
+        (df != null && df != None)
+      })
     }
   }
 
