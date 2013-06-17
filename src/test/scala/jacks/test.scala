@@ -80,6 +80,10 @@ object KitchenSink {
   ): KitchenSink[T] = KitchenSink[T](foo, bar, if (v == "A") A else B, Editor.withName(ed))
 }
 
+object Outer {
+  case class Nested(s: String)
+}
+
 class CaseClassSuite extends JacksTestSuite {
   test("primitive types correct") {
     rw(Primitives(boolean = false)) should equal (Primitives(boolean = false))
@@ -178,6 +182,10 @@ class CaseClassSuite extends JacksTestSuite {
     val ksi = KitchenSink[Int]("g", 1, A, Editor.emacs)
     rw(kss) should equal (kss)
     read[KitchenSink[Int]]("""{"foo":"g","bar":1}""") should equal (ksi)
+  }
+
+  test("nested case classes handled correctly") {
+    rw(Outer.Nested("foo")) should equal (Outer.Nested("foo"))
   }
 }
 

@@ -58,9 +58,6 @@ Case Classes
   in the primary constructor are included, and inherited members are
   ignored.
 
-  The Scala compiler only generates ScalaSig annotations for top-level
-  classes, so nested case classes aren't supported.
-
   Jackson supports a rich set of annotations for modifying the default
   (de)serialization of standard classes and their fields. Jacks will
   not support all of these annotations for case classes, but does

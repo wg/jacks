@@ -157,7 +157,12 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
   import tools.scalap.scalax.rules.scalasig.{Method => _,  _}
   import ScalaTypeSig.findClass
 
-  val cls = sig.topLevelClasses.head.asInstanceOf[ClassSymbol]
+  val cls = {
+    val name = `type`.getRawClass.getCanonicalName.replace('$', '.')
+    sig.symbols.collectFirst {
+      case c:ClassSymbol if c.path == name => c
+    }.get
+  }
 
   def isCaseClass = cls.isCase
 
@@ -261,7 +266,14 @@ object ScalaTypeSig {
   import scala.collection.immutable._
 
   def apply(tf: TypeFactory, t: JavaType): Option[ScalaTypeSig] = {
-    ScalaSigParser.parse(t.getRawClass) match {
+    def findSig(cls: Class[_]): Option[ScalaSig] = {
+      ScalaSigParser.parse(cls) orElse {
+        val enc = cls.getEnclosingClass
+        if (enc != null) findSig(enc) else None
+      }
+    }
+
+    findSig(t.getRawClass) match {
       case Some(sig) => Some(new ScalaTypeSig(tf, t, sig))
       case None      => None
     }
