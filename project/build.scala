@@ -4,7 +4,7 @@ import Keys._
 object JacksBuild extends Build {
   val buildSettings = Project.defaultSettings ++ Seq(
     name         := "jacks",
-    version      := "2.2.2",
+    version      := "2.2.3",
     organization := "com.lambdaworks",
     scalaVersion := "2.10.2",
 
@@ -12,7 +12,7 @@ object JacksBuild extends Build {
 
     libraryDependencies <+= scalaVersion("org.scala-lang" % "scalap" % _),
     libraryDependencies ++= Seq(
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.2.2",
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.2.3",
       "org.scalatest" %% "scalatest" % "1.9.1" % "test",
       "org.scalacheck" %% "scalacheck" % "1.10.1" % "test"
     ),

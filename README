@@ -95,10 +95,10 @@ Maven Artifacts
 
   Releases of jacks are available in the maven central repository:
 
-  "com.lambdaworks" %% "jacks" % "2.2.2"
+  "com.lambdaworks" %% "jacks" % "2.2.3"
 
   <dependency>
     <groupId>com.lambdaworks</groupId>
     <artifactId>jacks_2.10</artifactId>
-    <version>2.2.2</version>
+    <version>2.2.3</version>
   </dependency>
