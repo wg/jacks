@@ -19,7 +19,7 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSe
       val v = value.productElement(i).asInstanceOf[AnyRef]
       val s = p.findValueSerializer(a.`type`, null)
       if (!a.ignored && include(a, s, v)) {
-        g.writeFieldName(a.name)
+        g.writeFieldName(a.external)
         if (v != null) s.serialize(v, g, p) else p.defaultSerializeNull(g)
       }
     }
@@ -43,6 +43,7 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSe
 class CaseClassDeserializer(t: JavaType, c: Creator) extends JsonDeserializer[Any] {
   val fields = c.accessors.map(a => a.name -> None).toMap[String, Option[Object]]
   val types  = c.accessors.map(a => a.name -> a.`type`).toMap
+  val names  = c.accessors.map(a => a.external -> a.name).toMap
 
   override def deserialize(p: JsonParser, ctx: DeserializationContext): Any = {
     var values = fields
@@ -51,7 +52,7 @@ class CaseClassDeserializer(t: JavaType, c: Creator) extends JsonDeserializer[An
     var token = p.nextToken
 
     while (token == FIELD_NAME) {
-      val name = p.getCurrentName
+      val name = names.getOrElse(p.getCurrentName, null)
       val t    = types.getOrElse(name, null)
       if (t ne null) {
         val d = ctx.findContextualValueDeserializer(t, null)
@@ -69,8 +70,11 @@ class CaseClassDeserializer(t: JavaType, c: Creator) extends JsonDeserializer[An
 
     val params = c.accessors.map { a =>
       values(a.name) match {
-        case Some(v) => v
-        case None    => c.default(a)
+        case Some(v)             => v
+        case None if !a.required => c.default(a)
+        case None =>
+          val msg = "%s missing required field '%s'".format(t.getRawClass.getName, a.name)
+          throw ctx.mappingException(msg)
       }
     }
 

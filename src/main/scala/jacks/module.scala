@@ -12,9 +12,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include._
 
 import com.fasterxml.jackson.core._
 import com.fasterxml.jackson.databind._
+import com.fasterxml.jackson.databind.cfg.MapperConfig
 import com.fasterxml.jackson.databind.deser._
 import com.fasterxml.jackson.databind.ser._
 import com.fasterxml.jackson.databind.`type`._
+import com.fasterxml.jackson.databind.introspect._
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Constructor, Method}
@@ -76,7 +78,7 @@ class ScalaDeserializers extends Deserializers.Base {
       new TupleDeserializer(t)
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
-        case Some(sts) if sts.isCaseClass => new CaseClassDeserializer(t, sts.creator)
+        case Some(sts) if sts.isCaseClass => new CaseClassDeserializer(t, sts.creator(cfg))
         case _                            => null
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {
@@ -132,7 +134,7 @@ class ScalaSerializers extends Serializers.Base {
       new TupleSerializer(t)
     } else if (classOf[Product].isAssignableFrom(cls)) {
       ScalaTypeSig(cfg.getTypeFactory, t) match {
-        case Some(sts) if sts.isCaseClass => new CaseClassSerializer(t, sts.annotatedAccessors)
+        case Some(sts) if sts.isCaseClass => new CaseClassSerializer(t, sts.annotatedAccessors(cfg))
         case _                            => null
       }
     } else if (classOf[Symbol].isAssignableFrom(cls)) {
@@ -146,11 +148,13 @@ class ScalaSerializers extends Serializers.Base {
 }
 
 case class Accessor(
-  name:    String,
-  `type`:  JavaType,
-  default: Option[Method],
-  ignored: Boolean = false,
-  include: Include = ALWAYS
+  name:     String,
+  `type`:   JavaType,
+  default:  Option[Method],
+  external: String,
+  ignored:  Boolean = false,
+  required: Boolean = false,
+  include:  Include = ALWAYS
 )
 
 class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig) {
@@ -166,29 +170,14 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
 
   def isCaseClass = cls.isCase
 
-  lazy val constructor: Constructor[_] = {
-    val types = accessors.map(_.`type`.getRawClass)
+  def constructor(cfg: MapperConfig[_]): Constructor[_] = {
+    val types = accessors(cfg).map(_.`type`.getRawClass)
     `type`.getRawClass.getDeclaredConstructors.find { c =>
       val pairs = c.getParameterTypes.zip(types)
       pairs.length == types.length && pairs.forall {
         case (a, b) => a.isAssignableFrom(b) || (a == classOf[AnyRef] && b.isPrimitive)
       }
     }.get
-  }
-
-  lazy val accessors: List[Accessor] = {
-    var index = 1
-    cls.children.foldLeft(List.newBuilder[Accessor]) {
-      (accessors, c) =>
-        if (c.isCaseAccessor && !c.isPrivate) {
-          val sym  = c.asInstanceOf[MethodSymbol]
-          val name = sym.name
-          val typ  = resolve(sym.infoType)
-          accessors += Accessor(name, typ, default(`type`.getRawClass, "apply", index))
-          index += 1
-        }
-        accessors
-    }.result
   }
 
   def default(cls: Class[_], method: String, index: Int): Option[Method] = try {
@@ -198,47 +187,79 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
     case e:NoSuchMethodException => None
   }
 
-  def annotatedAccessors: Array[Accessor] = {
-    classAnnotatedAccessors.zip(constructor.getParameterAnnotations).map {
+  def external(cfg: MapperConfig[_], name: String) = {
+    val strategy = cfg.getPropertyNamingStrategy
+    var external = name
+    if (strategy != null) {
+      external = strategy.nameForConstructorParameter(cfg, null, name)
+    }
+    external
+  }
+
+  def accessors(cfg: MapperConfig[_]): List[Accessor] = {
+    var index = 1
+
+    cls.children.foldLeft(List.newBuilder[Accessor]) {
+      (accessors, c) =>
+        if (c.isCaseAccessor && !c.isPrivate) {
+          val sym  = c.asInstanceOf[MethodSymbol]
+          val name = sym.name
+          val typ  = resolve(sym.infoType)
+          val dflt = default(`type`.getRawClass, "apply", index)
+          accessors += Accessor(name, typ, dflt, external(cfg, name))
+          index += 1
+        }
+        accessors
+    }.result
+  }
+
+  def annotatedAccessors(cfg: MapperConfig[_]): Array[Accessor] = {
+    def property(acc: Accessor, a: JsonProperty): Accessor = {
+      val name = if (a.value != "") a.value else acc.name
+      acc.copy(name = name, required = a.required, external = name)
+    }
+
+    classAnnotatedAccessors(cfg).zip(constructor(cfg).getParameterAnnotations).map {
       case (accessor: Accessor, annotations: Array[Annotation]) =>
         annotations.foldLeft(accessor) {
-          case (accessor, a:JsonProperty) if a.value != "" => accessor.copy(name    = a.value)
-          case (accessor, a:JsonIgnore)                    => accessor.copy(ignored = a.value)
-          case (accessor, a:JsonInclude)                   => accessor.copy(include = a.value)
-          case (accessor, _)                               => accessor
+          case (acc, a:JsonProperty) => property(acc, a)
+          case (acc, a:JsonIgnore)   => acc.copy(ignored = a.value)
+          case (acc, a:JsonInclude)  => acc.copy(include = a.value)
+          case (acc, _)              => acc
         }
     }.toArray
   }
 
-  def classAnnotatedAccessors: List[Accessor] = {
-    `type`.getRawClass.getAnnotations.foldLeft(accessors) {
-      case (accessors, ignore: JsonIgnoreProperties) =>
+  def classAnnotatedAccessors(cfg: MapperConfig[_]): List[Accessor] = {
+    `type`.getRawClass.getAnnotations.foldLeft(accessors(cfg)) {
+      case (accs, ignore: JsonIgnoreProperties) =>
         val ignored = ignore.value.toSet
-        accessors.map(a => a.copy(ignored = ignored.contains(a.name)))
-      case (accessors, include: JsonInclude) =>
-        accessors.map(a => a.copy(include = include.value))
-      case (accessors, _) =>
-        accessors
+        accs.map(a => a.copy(ignored = ignored.contains(a.name)))
+      case (accs, include: JsonInclude) =>
+        accs.map(a => a.copy(include = include.value))
+      case (accs, _) =>
+        accs
     }
   }
 
-  def creatorAccessors(m: Method): Array[Accessor] = {
+  def creatorAccessors(cfg: MapperConfig[_], m: Method): Array[Accessor] = {
     val cls   = m.getDeclaringClass
     var index = 0
     m.getGenericParameterTypes.zip(m.getParameterAnnotations).map {
       case (t: java.lang.reflect.Type, annotations: Array[Annotation]) =>
+        index += 1
         val Some(a) = annotations.find(_.isInstanceOf[JsonProperty])
         val name    = a.asInstanceOf[JsonProperty].value
-        index += 1
-        Accessor(name, tf.constructType(t), default(cls, m.getName, index))
+        val dflt    = default(cls, m.getName, index)
+        Accessor(name, tf.constructType(t), dflt, external(cfg, name))
     }
   }
 
-  def creator: Creator = {
+  def creator(cfg: DeserializationConfig): Creator = {
     val c = findClass(`type`.getRawClass.getName + "$").getField("MODULE$").get(null)
     c.getClass.getDeclaredMethods.find(_.getAnnotation(classOf[JsonCreator]) != null) match {
-      case Some(m) => new CompanionCreator(m, c, creatorAccessors(m))
-      case None    => new ConstructorCreator(constructor, annotatedAccessors)
+      case Some(m) => new CompanionCreator(m, c, creatorAccessors(cfg, m))
+      case None    => new ConstructorCreator(constructor(cfg), annotatedAccessors(cfg))
     }
   }
 
