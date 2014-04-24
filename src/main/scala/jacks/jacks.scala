@@ -5,7 +5,7 @@ package com.lambdaworks.jacks
 import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.ObjectMapper
 
-import scala.collection.JavaConversions.JConcurrentMapWrapper
+import scala.collection.convert.Wrappers.JConcurrentMapWrapper
 
 import java.io._
 import java.util.concurrent.ConcurrentHashMap

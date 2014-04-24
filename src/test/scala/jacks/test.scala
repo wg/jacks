@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.JsonMappingException
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 case class Primitives(
   boolean: Boolean = true,
@@ -284,7 +284,7 @@ class UntypedObjectDeserializerSuite extends JacksTestSuite {
   }
 }
 
-trait JacksTestSuite extends FunSuite with ShouldMatchers {
+trait JacksTestSuite extends FunSuite with Matchers {
   import JacksMapper._
 
   def rw[T: Manifest](v: T)        = read(write(v))

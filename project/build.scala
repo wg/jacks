@@ -6,24 +6,18 @@ object JacksBuild extends Build {
     name         := "jacks",
     version      := "2.2.3",
     organization := "com.lambdaworks",
-    scalaVersion := "2.10.2",
+    scalaVersion := "2.11.0",
 
-    crossScalaVersions := Seq("2.10.2", "2.9.3"),
+    crossScalaVersions := Seq("2.11.0", "2.10.4"),
 
     libraryDependencies <+= scalaVersion("org.scala-lang" % "scalap" % _),
     libraryDependencies ++= Seq(
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.2.3",
-      "org.scalatest" %% "scalatest" % "1.9.1" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.10.1" % "test"
+      "org.scalatest" %% "scalatest" % "2.1.3" % "test",
+      "org.scalacheck" %% "scalacheck" % "1.11.3" % "test"
     ),
 
-    scalacOptions ++= Seq("-unchecked", "-optimize"),
-    scalacOptions <++= scalaVersion map {
-      CrossVersion.partialVersion(_) match {
-        case Some((m, n)) if m > 2 || n >= 10 => Seq("-language:_")
-        case _                                => Nil
-      }
-    },
+    scalacOptions ++= Seq( "-language:_", "-unchecked", "-optimize"),
 
     publishArtifact in Test := false,
     publishMavenStyle       := true,

@@ -5,7 +5,7 @@ package com.lambdaworks.jacks
 import org.scalacheck._
 import org.scalacheck.Prop.forAll
 
-import scala.reflect.BeanProperty
+import scala.beans.BeanProperty
 
 object ImmutableCollectionSpec extends ScalaModuleSpec("") {
   import scala.collection.immutable._
