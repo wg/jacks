@@ -309,6 +309,7 @@ object ScalaTypeSig {
     "scala.Float"             -> classOf[Float],
     "scala.Long"              -> classOf[Long],
     "scala.Short"             -> classOf[Short],
+    "scala.Any"               -> classOf[Any],
     "scala.AnyRef"            -> classOf[AnyRef],
     "scala.Predef.Map"        -> classOf[Map[_, _]],
     "scala.Predef.Set"        -> classOf[Set[_]],

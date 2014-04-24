@@ -87,6 +87,8 @@ object Outer {
 
 case class NamingStrategy(camelCase: String, PascalCase: Int)
 
+case class WithAny(map: Map[String, Any])
+
 class CaseClassSuite extends JacksTestSuite {
   test("primitive types correct") {
     rw(Primitives(boolean = false)) should equal (Primitives(boolean = false))
@@ -195,6 +197,24 @@ class CaseClassSuite extends JacksTestSuite {
   test("nested case classes handled correctly") {
     rw(Outer.Nested("foo")) should equal (Outer.Nested("foo"))
   }
+
+  test("PropertyNamingStrategy is used correctly") {
+    import com.fasterxml.jackson.databind.PropertyNamingStrategy._
+
+    val m = new Object with JacksMapper
+    m.mapper.setPropertyNamingStrategy(CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES)
+
+    val obj  = NamingStrategy("foo", 1)
+    val json = """{"camel_case":"foo","pascal_case":1}"""
+
+    m.writeValueAsString(obj)         should equal (json)
+    m.readValue[NamingStrategy](json) should equal (obj)
+  }
+
+  test("Map[String, Any] handled correctly") {
+    val map = Map[String, Any]("foo" -> 1, "bar" -> "2")
+    rw(WithAny(map)) should equal (WithAny(map))
+  }
 }
 
 class InvalidJsonSuite extends JacksTestSuite {
@@ -212,19 +232,6 @@ class InvalidJsonSuite extends JacksTestSuite {
 
   test("deserializing Tuple from non-array throws JsonMappingException") {
     intercept[JsonMappingException] { read[Tuple2[Any, Any]]("123") }
-  }
-
-  test("PropertyNamingStrategy is used correctly") {
-    import com.fasterxml.jackson.databind.PropertyNamingStrategy._
-
-    val m = new Object with JacksMapper
-    m.mapper.setPropertyNamingStrategy(CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES)
-
-    val obj  = NamingStrategy("foo", 1)
-    val json = """{"camel_case":"foo","pascal_case":1}"""
-
-    m.writeValueAsString(obj)         should equal (json)
-    m.readValue[NamingStrategy](json) should equal (obj)
   }
 }
 
