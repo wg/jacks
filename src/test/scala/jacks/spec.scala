@@ -16,7 +16,6 @@ object ImmutableCollectionSpec extends ScalaModuleSpec("") {
   property("List[Boolean]") = forAll { (c: List[Boolean]) => c == rw(c) }
   property("Stream[Int]")   = forAll { (c: Stream[Int])   => c == rw(c) }
   property("Queue[Char]")   = forAll { (c: Queue[Char])   => c == rw(c) }
-  property("Stack[String]") = forAll { (c: Stack[String]) => c == rw(c) }
 
   // Set
   property("Set[Boolean]")  = forAll { (s: Set[Boolean])  => s == rw(s) }
@@ -46,8 +45,6 @@ object MutableCollectionSpec extends ScalaModuleSpec("") {
 
   // LinearSeq
   property("MutableList[Int]")      = forAll { (c: MutableList[Int])      => c == rw(c) }
-  property("LinkedList[Int]")       = forAll { (c: LinkedList[Int])       => c == rw(c) }
-  property("DoubleLinkedList[Int]") = forAll { (c: DoubleLinkedList[Int]) => c == rw(c) }
   property("Queue[Int]")            = forAll { (c: Queue[Int])            => c == rw(c) }
 
   // Set
@@ -281,7 +278,6 @@ object ImmutableCollections extends ArbitraryCollections {
   implicit def arbitraryList[T: Arbitrary]: Arbitrary[List[T]] = arbitrarySeq[T, List](List)
   implicit def arbitraryStream[T: Arbitrary]: Arbitrary[Stream[T]] = arbitrarySeq[T, Stream](Stream)
   implicit def arbitraryQueue[T: Arbitrary]: Arbitrary[Queue[T]] = arbitrarySeq[T, Queue](Queue)
-  implicit def arbitraryStack[T: Arbitrary]: Arbitrary[Stack[T]] = arbitrarySeq[T, Stack](Stack)
 
   implicit def arbitraryHashMap[K: Arbitrary, V: Arbitrary]: Arbitrary[HashMap[K, V]] = arbitraryMap[K, V, HashMap](HashMap)
   implicit def arbitraryListMap[K: Arbitrary, V: Arbitrary]: Arbitrary[ListMap[K, V]] = arbitraryMap[K, V, ListMap](ListMap)
@@ -310,8 +306,6 @@ object MutableCollections extends ArbitraryCollections {
   implicit def arbitraryArrayBuffer[T: Arbitrary]: Arbitrary[ArrayBuffer[T]] = arbitrarySeq[T, ArrayBuffer](ArrayBuffer)
   implicit def arbitraryArraySeq[T: Arbitrary]: Arbitrary[ArraySeq[T]] = arbitrarySeq[T, ArraySeq](ArraySeq)
   implicit def arbitraryArrayStack[T: Arbitrary]: Arbitrary[ArrayStack[T]] = arbitrarySeq[T, ArrayStack](ArrayStack)
-  implicit def arbitraryDoubleLinkedList[T: Arbitrary]: Arbitrary[DoubleLinkedList[T]] = arbitrarySeq[T, DoubleLinkedList](DoubleLinkedList)
-  implicit def arbitraryLinkedList[T: Arbitrary]: Arbitrary[LinkedList[T]] = arbitrarySeq[T, LinkedList](LinkedList)
   implicit def arbitraryListBuffer[T: Arbitrary]: Arbitrary[ListBuffer[T]] = arbitrarySeq[T, ListBuffer](ListBuffer)
   implicit def arbitraryMutableList[T: Arbitrary]: Arbitrary[MutableList[T]] = arbitrarySeq[T, MutableList](MutableList)
   implicit def arbitraryQueue[T: Arbitrary]: Arbitrary[Queue[T]] = arbitrarySeq[T, Queue](Queue)
