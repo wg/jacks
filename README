@@ -5,7 +5,7 @@ jacks - Jackson module for Scala
   and case classes.
 
   This version of jacks has been tested against Scala 2.11.0, 2.10.4 and
-  Jackson 2.2.2
+  Jackson 2.3.3
 
   Join the lambdaWorks-OSS Google Group to discuss this project:
 
@@ -95,10 +95,10 @@ Maven Artifacts
 
   Releases of jacks are available in the maven central repository:
 
-  "com.lambdaworks" %% "jacks" % "2.2.3"
+  "com.lambdaworks" %% "jacks" % "2.3.3"
 
   <dependency>
     <groupId>com.lambdaworks</groupId>
-    <artifactId>jacks_2.10</artifactId>
-    <version>2.2.3</version>
+    <artifactId>jacks_2.11</artifactId>
+    <version>2.3.3</version>
   </dependency>
