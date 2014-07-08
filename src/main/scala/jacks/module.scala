@@ -21,7 +21,8 @@ import com.fasterxml.jackson.databind.introspect._
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Constructor, Method}
 
-import tools.scalap.scalax.rules.scalasig.ScalaSig
+import reflect.runtime.universe._
+import reflect.runtime.{currentMirror=>mirror}
 
 class ScalaModule extends Module {
   def version       = new Version(2, 3, 3, null, "com.lambdaworks", "jacks")
@@ -81,7 +82,7 @@ class ScalaDeserializers extends Deserializers.Base {
         case Some(sts) if sts.isCaseClass => new CaseClassDeserializer(t, sts.creator(cfg))
         case _                            => null
       }
-    } else if (classOf[Symbol].isAssignableFrom(cls)) {
+    } else if (classOf[scala.Symbol].isAssignableFrom(cls)) {
       new SymbolDeserializer
     } else if (classOf[AnyRef].equals(cls)) {
       new UntypedObjectDeserializer(cfg)
@@ -91,7 +92,8 @@ class ScalaDeserializers extends Deserializers.Base {
   }
 
   def companion[T](cls: Class[_]): T = {
-    Class.forName(cls.getName + "$").getField("MODULE$").get(null).asInstanceOf[T]
+    val companionSymbol = mirror.classSymbol(cls).companion.asModule
+    mirror.reflectModule(companionSymbol).instance.asInstanceOf[T]
   }
 
   lazy val orderings = Map[Class[_], Ordering[_]](
@@ -137,7 +139,7 @@ class ScalaSerializers extends Serializers.Base {
         case Some(sts) if sts.isCaseClass => new CaseClassSerializer(t, sts.annotatedAccessors(cfg))
         case _                            => null
       }
-    } else if (classOf[Symbol].isAssignableFrom(cls)) {
+    } else if (classOf[scala.Symbol].isAssignableFrom(cls)) {
       new SymbolSerializer(t)
     } else if (classOf[Enumeration$Val].isAssignableFrom(cls)) {
       ser.std.ToStringSerializer.instance
@@ -157,18 +159,11 @@ case class Accessor(
   include:  Include = ALWAYS
 )
 
-class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig) {
-  import tools.scalap.scalax.rules.scalasig.{Method => _,  _}
+class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val cls: ClassSymbol) {
+
   import ScalaTypeSig.findClass
 
-  val cls = {
-    val name = `type`.getRawClass.getCanonicalName.replace('$', '.')
-    sig.symbols.collectFirst {
-      case c:ClassSymbol if c.path == name => c
-    }.get
-  }
-
-  def isCaseClass = cls.isCase
+  def isCaseClass = cls.isCaseClass
 
   def constructor(cfg: MapperConfig[_]): Constructor[_] = {
     val types = accessors(cfg).map(_.`type`.getRawClass)
@@ -199,17 +194,16 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
   def accessors(cfg: MapperConfig[_]): List[Accessor] = {
     var index = 1
 
-    cls.children.foldLeft(List.newBuilder[Accessor]) {
-      (accessors, c) =>
-        if (c.isCaseAccessor && !c.isPrivate) {
+    cls.toType.decls.foldLeft(List.newBuilder[Accessor]) {
+      case (accessors, c: MethodSymbol) if (c.isCaseAccessor && !c.isPrivate) =>
           val sym  = c.asInstanceOf[MethodSymbol]
           val name = sym.name
-          val typ  = resolve(sym.infoType)
+          val typ  = resolve(sym.returnType)
           val dflt = default(`type`.getRawClass, "apply", index)
-          accessors += Accessor(name, typ, dflt, external(cfg, name))
+          accessors += Accessor(name.encodedName.toString, typ, dflt, external(cfg, name.encodedName.toString))
           index += 1
-        }
-        accessors
+          accessors
+      case (accessors, _) => accessors
     }.result
   }
 
@@ -267,37 +261,26 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
     i => (`type`.containedTypeName(i) -> `type`.containedType(i))
   }.toMap
 
-  def resolve(t: Type): JavaType = t match {
-    case NullaryMethodType(t2) =>
-      resolve(t2)
-    case TypeRefType(_, TypeSymbol(s), Nil) =>
-      contained(s.name)
-    case TypeRefType(_, s, Nil) =>
-      tf.constructType(ScalaTypeSig.resolve(s))
-    case TypeRefType(_, s, a :: Nil) if s.path == "scala.Array" =>
-      ArrayType.construct(resolve(a), null, null)
-    case TypeRefType(_, s, args) =>
-      val params = args.map(resolve(_))
-      tf.constructParametricType(ScalaTypeSig.resolve(s), params: _ *)
+  def resolve(t: Type): JavaType = {
+
+    val typeName = t.typeSymbol.name.toString
+    if (contained.contains(typeName)) contained(typeName)
+    else if (t.typeArgs.isEmpty) tf.constructType(ScalaTypeSig.resolve(t.typeSymbol))
+    else if (t <:< typeOf[Array[_]]) ArrayType.construct(resolve(t.typeArgs.head), null, null)
+    else {
+      val params = t.typeArgs.map(resolve(_))
+      tf.constructParametricType(ScalaTypeSig.resolve(t.typeSymbol), params: _*)
+    }
   }
+
 }
 
 object ScalaTypeSig {
-  import tools.scalap.scalax.rules.scalasig.{ScalaSigParser, Symbol}
   import scala.collection.immutable._
 
   def apply(tf: TypeFactory, t: JavaType): Option[ScalaTypeSig] = {
-    def findSig(cls: Class[_]): Option[ScalaSig] = {
-      ScalaSigParser.parse(cls) orElse {
-        val enc = cls.getEnclosingClass
-        if (enc != null) findSig(enc) else None
-      }
-    }
-
-    findSig(t.getRawClass) match {
-      case Some(sig) => Some(new ScalaTypeSig(tf, t, sig))
-      case None      => None
-    }
+    val cls = Option(t.getRawClass)
+    cls.map(x => new ScalaTypeSig(tf, t, mirror.classSymbol(x)))
   }
 
   val types = Map[String, Class[_]](
@@ -320,7 +303,7 @@ object ScalaTypeSig {
     "scala.Enumeration.Value" -> classOf[Enumeration$Val]
   ).withDefault(findClass(_))
 
-  def resolve(s: Symbol) = types(s.path)
+  def resolve(s: Symbol) = types(s.fullName)
 
   def findClass(name: String): Class[_] = {
     val cl = Thread.currentThread().getContextClassLoader()

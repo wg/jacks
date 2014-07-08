@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
 
+import reflect.runtime.universe.TypeTag
+
 case class Primitives(
   boolean: Boolean = true,
   byte:    Byte    = 0,
@@ -268,8 +270,7 @@ class JacksMapperSuite extends JacksTestSuite {
   }
 
   test("resolve caches JavaType") {
-    val m = manifest[String]
-    resolve(m) should be theSameInstanceAs resolve(m)
+    resolve[String] should be theSameInstanceAs resolve[String]
   }
 }
 
@@ -294,7 +295,7 @@ class UntypedObjectDeserializerSuite extends JacksTestSuite {
 trait JacksTestSuite extends FunSuite with Matchers {
   import JacksMapper._
 
-  def rw[T: Manifest](v: T)        = read(write(v))
-  def write[T: Manifest](v: T)     = writeValueAsString(v)
-  def read[T: Manifest](s: String) = readValue(s)
+  def rw[T: TypeTag](v: T)        = read(write(v))
+  def write[T: TypeTag](v: T)     = writeValueAsString(v)
+  def read[T: TypeTag](s: String) = readValue(s)
 }

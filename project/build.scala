@@ -8,9 +8,9 @@ object JacksBuild extends Build {
     organization := "com.lambdaworks",
     scalaVersion := "2.11.0",
 
-    crossScalaVersions := Seq("2.11.0", "2.10.4"),
+    crossScalaVersions := Seq("2.11.0"),
 
-    libraryDependencies <+= scalaVersion("org.scala-lang" % "scalap" % _),
+    libraryDependencies <+= scalaVersion("org.scala-lang" % "scala-reflect" % _),
     libraryDependencies ++= Seq(
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.3.3",
       "org.scalatest" %% "scalatest" % "2.1.3" % "test",

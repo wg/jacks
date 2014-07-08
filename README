@@ -4,8 +4,7 @@ jacks - Jackson module for Scala
   types, including mutable & immutable collections, Option, Tuple, Symbol,
   and case classes.
 
-  This version of jacks has been tested against Scala 2.11.0, 2.10.4 and
-  Jackson 2.3.3
+  This version of jacks has been tested against Scala 2.11.1, and Jackson 2.3.3
 
   Join the lambdaWorks-OSS Google Group to discuss this project:
 
@@ -24,14 +23,14 @@ Basic Usage
   The preconfigured ObjectMapper is available via JacksMapper.mapper
   and a new ScalaModule may be added to any existing ObjectMapper.
 
-Erasure & Manifests
+Erasure & TypeTag
 
   Reading parameterized types requires a Jackson JavaType which can be
-  derived from a Scala Manifest. The readValue methods of JacksMapper take
-  an implicit Manifest and look up the appropriate JavaType.
+  derived from a Scala TypeTag. The readValue methods of JacksMapper take
+  an implicit TypeTag and look up the appropriate JavaType.
 
-  JacksMapper.resolve(manifest) will also return the correct JavaType
-  given a Manifest.
+  JacksMapper.resolve(typeTag) will also return the correct JavaType
+  given a TypeTag.
 
 Serialization Details
 
