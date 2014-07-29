@@ -9,6 +9,14 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
 
+object TaggedWrapper {
+  type Tagged = String with ({ type Tag = Nothing })
+}
+import TaggedWrapper._
+
+case class TaggedWrapper(tagged: Tagged)
+
+
 case class Primitives(
   boolean: Boolean = true,
   byte:    Byte    = 0,
