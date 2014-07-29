@@ -303,7 +303,7 @@ object ScalaTypeSig {
     "scala.Enumeration.Value" -> classOf[Enumeration$Val]
   ).withDefault(findClass(_))
 
-  def resolve(s: Symbol) = types(s.fullName)
+  def resolve(s: Symbol) = types(s.asType.toType.erasure.typeSymbol.fullName)
 
   def findClass(name: String): Class[_] = {
     val cl = Thread.currentThread().getContextClassLoader()

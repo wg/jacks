@@ -11,6 +11,13 @@ import org.scalatest.Matchers
 
 import reflect.runtime.universe.TypeTag
 
+object TaggedWrapper {
+  type Tagged = Long with ({ type Tag = Nothing })
+}
+import TaggedWrapper._
+
+case class TaggedWrapper(tagged: Tagged)
+
 case class Primitives(
   boolean: Boolean = true,
   byte:    Byte    = 0,
@@ -272,6 +279,18 @@ class JacksMapperSuite extends JacksTestSuite {
   test("resolve caches JavaType") {
     resolve[String] should be theSameInstanceAs resolve[String]
   }
+  
+  test("tagged type") {
+    val t: Tagged = 3l.asInstanceOf[Tagged]
+    rw(t) should equal (t)
+  }
+
+  test("inner tagged type") {
+    val t: Tagged = 3l.asInstanceOf[Tagged]
+    val wrapper = TaggedWrapper(t)
+    rw(wrapper) should equal (wrapper)
+  }
+
 }
 
 class UntypedObjectDeserializerSuite extends JacksTestSuite {
