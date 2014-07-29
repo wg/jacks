@@ -7,6 +7,8 @@ import org.scalacheck.Prop.forAll
 
 import scala.beans.BeanProperty
 
+import reflect.runtime.universe.TypeTag
+
 object ImmutableCollectionSpec extends ScalaModuleSpec("") {
   import scala.collection.immutable._
   import ImmutableCollections._
@@ -201,16 +203,16 @@ case class CaseClass(
 abstract class ScalaModuleSpec(name: String) extends Properties(name) {
   import JacksMapper._
 
-  def r[T](s: String)(implicit m: Manifest[T]): T = readValue(s)
+  def r[T: TypeTag](s: String): T = readValue(s)
 
-  def rw[T](v: T)(implicit m: Manifest[T]): T = {
-    val t = resolve(m)
+  def rw[T: TypeTag](v: T): T = {
+    val t = resolve[T]
     val s = mapper.writeValueAsString(v)
     mapper.readValue(s, t)
   }
 
-  def rw[T,U](v: T, v2: U)(implicit m: Manifest[U]): U = {
-    val u = resolve(m)
+  def rw[T,U: TypeTag](v: T, v2: U): U = {
+    val u = resolve[U]
     val s = mapper.writeValueAsString(v)
     mapper.readValue(s, u)
   }
