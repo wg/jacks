@@ -4,17 +4,17 @@ import Keys._
 object JacksBuild extends Build {
   val buildSettings = Project.defaultSettings ++ Seq(
     name         := "jacks",
-    version      := "2.3.3",
+    version      := "2.3.4",
     organization := "com.lambdaworks",
-    scalaVersion := "2.11.0",
+    scalaVersion := "2.11.6",
 
-    crossScalaVersions := Seq("2.11.0", "2.10.4"),
+    crossScalaVersions := Seq("2.11.6", "2.10.5"),
 
     libraryDependencies <+= scalaVersion("org.scala-lang" % "scalap" % _),
     libraryDependencies ++= Seq(
-      "com.fasterxml.jackson.core" % "jackson-databind" % "2.3.3",
-      "org.scalatest" %% "scalatest" % "2.1.3" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.11.3" % "test"
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.4.4",
+      "org.scalatest" %% "scalatest" % "2.2.4" % "test",
+      "org.scalacheck" %% "scalacheck" % "1.12.2" % "test"
     ),
 
     scalacOptions ++= Seq( "-language:_", "-unchecked", "-optimize"),
