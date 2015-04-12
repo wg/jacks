@@ -278,7 +278,8 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
       ArrayType.construct(resolve(a), null, null)
     case TypeRefType(_, s, args) =>
       val params = args.map(resolve(_))
-      tf.constructParametricType(ScalaTypeSig.resolve(s), params: _ *)
+      val actual = ScalaTypeSig.resolve(s)
+      tf.constructParametrizedType(actual, actual, params: _ *)
   }
 }
 

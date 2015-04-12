@@ -5,6 +5,7 @@ package com.lambdaworks.jacks
 import com.fasterxml.jackson.annotation._
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.databind.ObjectReader
 
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
@@ -286,7 +287,7 @@ class UntypedObjectDeserializerSuite extends JacksTestSuite {
   }
 
   test("reading JSON array returns Java Array") {
-    val r = mapper.reader(USE_JAVA_ARRAY_FOR_JSON_ARRAY).withType(classOf[AnyRef])
+    val r = mapper.reader[ObjectReader](USE_JAVA_ARRAY_FOR_JSON_ARRAY).forType(classOf[AnyRef])
     r.readValue[AnyRef]("[1, 2, 3]") should equal (Array(1, 2, 3))
   }
 }

@@ -4,6 +4,7 @@ package com.lambdaworks.jacks
 
 import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.ObjectWriter
 
 import scala.collection.convert.Wrappers.JConcurrentMapWrapper
 
@@ -23,7 +24,7 @@ trait JacksMapper {
   def writeValue(o: OutputStream, v: Any)   { mapper.writeValue(o, v) }
   def writeValueAsString[T: Manifest](v: T) = writerWithType.writeValueAsString(v)
 
-  def writerWithType[T: Manifest]           = mapper.writerWithType(resolve)
+  def writerWithType[T: Manifest]: ObjectWriter = mapper.writerFor(resolve)
 
   val cache = JConcurrentMapWrapper(new ConcurrentHashMap[Manifest[_], JavaType])
 
@@ -32,7 +33,7 @@ trait JacksMapper {
     val tf = mapper.getTypeFactory
     m.typeArguments.isEmpty match {
       case true  => tf.constructType(m.erasure)
-      case false => tf.constructParametricType(m.erasure, params: _*)
+      case false => tf.constructParametrizedType(m.erasure, m.erasure, params: _*)
     }
   })
 }

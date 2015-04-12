@@ -18,7 +18,7 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSe
       val a = accessors(i)
       val v = value.productElement(i).asInstanceOf[AnyRef]
       val s = p.findValueSerializer(a.`type`, null)
-      if (!a.ignored && include(a, s, v)) {
+      if (!a.ignored && include(a, p, s, v)) {
         g.writeFieldName(a.external)
         if (v != null) s.serialize(v, g, p) else p.defaultSerializeNull(g)
       }
@@ -27,10 +27,10 @@ class CaseClassSerializer(t: JavaType, accessors: Array[Accessor]) extends StdSe
     g.writeEndObject()
   }
 
-  @inline final def include(a: Accessor, s: JsonSerializer[AnyRef], v: AnyRef): Boolean = a.include match {
+  @inline final def include(a: Accessor, p: SerializerProvider, s: JsonSerializer[AnyRef], v: AnyRef): Boolean = a.include match {
     case ALWAYS      => true
     case NON_DEFAULT => default(a) != v
-    case NON_EMPTY   => !s.isEmpty(v)
+    case NON_EMPTY   => !s.isEmpty(p, v)
     case NON_NULL    => v != null
   }
 

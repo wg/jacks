@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.databind.deser.std.{UntypedObjectDeserializer => BaseUntypedObjectDeserializer}
 
 class UntypedObjectDeserializer(cfg: DeserializationConfig) extends BaseUntypedObjectDeserializer {
-  val o = cfg.getTypeFactory.constructParametricType(classOf[Map[_, _]], classOf[String], classOf[AnyRef])
-  val a = cfg.getTypeFactory.constructParametricType(classOf[List[_]], classOf[AnyRef])
+  val o = cfg.getTypeFactory.constructParametrizedType(classOf[Map[_, _]], classOf[Map[_, _]], classOf[String], classOf[AnyRef])
+  val a = cfg.getTypeFactory.constructParametrizedType(classOf[List[_]], classOf[List[_]], classOf[AnyRef])
 
   override def mapArray(p: JsonParser, ctx: DeserializationContext): AnyRef = {
     val d = ctx.findContextualValueDeserializer(a, null)
