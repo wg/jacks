@@ -163,9 +163,14 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
 
   val cls = {
     val name = `type`.getRawClass.getCanonicalName.replace('$', '.')
-    sig.symbols.collectFirst {
+    val emptyName = "<empty>." + name
+    (sig.symbols.collectFirst {
       case c:ClassSymbol if c.path == name => c
-    }.get
+    } orElse {
+      sig.symbols.collectFirst {
+        case c:ClassSymbol if c.path == emptyName => c
+      }
+    }).get
   }
 
   def isCaseClass = cls.isCase
