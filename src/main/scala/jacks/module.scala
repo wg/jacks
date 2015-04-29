@@ -161,10 +161,12 @@ class ScalaTypeSig(val tf: TypeFactory, val `type`: JavaType, val sig: ScalaSig)
   import tools.scalap.scalax.rules.scalasig.{Method => _,  _}
   import ScalaTypeSig.findClass
 
+  def path(c:ClassSymbol) = c.path.replaceFirst("^<empty>\\.", "")
+
   val cls = {
     val name = `type`.getRawClass.getCanonicalName.replace('$', '.')
     sig.symbols.collectFirst {
-      case c:ClassSymbol if c.path == name => c
+      case c:ClassSymbol if path(c) == name && !c.isModule => c
     }.get
   }
 

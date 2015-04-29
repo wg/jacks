@@ -1,6 +1,8 @@
 // Copyright (C) 2011 - Will Glozer.  All rights reserved.
 
-package com.lambdaworks.jacks
+case class Point(x: Int, y: Int)
+
+package com.lambdaworks.jacks {
 
 import com.fasterxml.jackson.annotation._
 import com.fasterxml.jackson.annotation.JsonInclude.Include
@@ -89,6 +91,10 @@ object Outer {
 case class NamingStrategy(camelCase: String, PascalCase: Int)
 
 case class WithAny(map: Map[String, Any])
+
+object ObjectBeforeCaseClass
+
+case class ObjectBeforeCaseClass(x: Int)
 
 class CaseClassSuite extends JacksTestSuite {
   test("primitive types correct") {
@@ -216,6 +222,17 @@ class CaseClassSuite extends JacksTestSuite {
     val map = Map[String, Any]("foo" -> 1, "bar" -> "2")
     rw(WithAny(map)) should equal (WithAny(map))
   }
+
+  test("Works correctly when companion object is before the case class") {
+    val obcc = ObjectBeforeCaseClass(5)
+    rw(obcc) should equal (obcc)
+  }
+
+  test("Works correctly when case class is in root package") {
+    val point = Point(5, 7)
+    rw(point) should equal (point)
+  }
+
 }
 
 class InvalidJsonSuite extends JacksTestSuite {
@@ -299,3 +316,6 @@ trait JacksTestSuite extends FunSuite with Matchers {
   def write[T: Manifest](v: T)     = writeValueAsString(v)
   def read[T: Manifest](s: String) = readValue(s)
 }
+
+}
+
