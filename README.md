@@ -19,10 +19,12 @@ The JacksMapper companion object provides a preconfigured ObjectMapper
 and a number of read/write methods:
 
 ```scala
-JacksMapper.writeValueAsString(List(1, 2, 3)) == "[1,2,3]"
+JacksMapper.writeValueAsString(List(1, 2, 3)) 
+// will return "[1,2,3]"
 ```
 ```scala
-JacksMapper.readValue[List[Int]]("[1, 2, 3]") == List(1, 2, 3)
+JacksMapper.readValue[List[Int]]("[1, 2, 3]")
+// will return List(1, 2, 3)
 ```
 The preconfigured `ObjectMapper` is available via `JacksMapper.mapper`
 and a new `ScalaModule` may be added to any existing `ObjectMapper`.
